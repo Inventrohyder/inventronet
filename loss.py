@@ -239,4 +239,6 @@ class CategoricalCrossEntropy(Loss):
             The derivative of the loss, scaled by the number of samples.
             Shape: (n_samples, n_classes)
         """
-        raise NotImplementedError("")
+        # Compute the derivative of the categorical cross-entropy loss
+        grad = -y_true / np.exp(np.logaddexp(0, -y_pred))
+        return grad / len(y_true)
