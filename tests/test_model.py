@@ -4,13 +4,13 @@ import numpy as np
 
 from ..model import Sequential
 from ..layers import Dense
-from ..loss import MSE, Loss
+from ..loss import MeanSquaredError, Loss
 from ..metrics import Accuracy, Metric
 
 
 @pytest.fixture
-def mse_loss() -> MSE:
-    yield MSE()
+def mse_loss() -> MeanSquaredError:
+    yield MeanSquaredError()
 
 
 @pytest.fixture

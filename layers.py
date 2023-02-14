@@ -72,7 +72,8 @@ class Layer(ABC):
         Args:
             error: The error array of shape (batch_size, output_dim).
             learning_rate: The learning rate for the gradient update.
-            prev_output: The previous output array of shape (batch_size, input_dim).
+            prev_output: The previous output array of
+                shape (batch_size, input_dim).
 
         Returns:
             The propagated error array of shape (batch_size, input_dim).
@@ -278,7 +279,8 @@ class Dropout(Layer):
         Args:
             dropout_rate: The probability of dropping out each neuron.
         """
-        # Call the superclass constructor with the input and output dimensions as None
+        # Call the superclass constructor with the input and output dimensions
+        # equal and activation as None
         super().__init__(input_dim=input_dim, output_dim=input_dim, activation=None)
         # Store the dropout rate as an attribute
         self.dropout_rate: float = dropout_rate
@@ -479,32 +481,6 @@ class BatchNormalization(Layer):
         grad_prev_output = grad_input
         # Return the gradient array
         return grad_prev_output
-
-    # def backward(self, error: np.ndarray, learning_rate: float) -> np.ndarray:
-    #     """Perform the backward propagation on the layer.
-
-    #     Args:
-    #         error: The error array of shape (batch_size, output_dim).
-    #         learning_rate: The learning rate for the parameter update.
-
-    #     Returns:
-    #         The gradient array of shape (batch_size, input_dim).
-    #     """
-    #     batch_size = error.shape[0]
-    #     grad_gamma = np.sum(error * self.normalized_input, axis=0)
-    #     grad_beta = np.sum(error, axis=0)
-    #     self.gamma -= learning_rate * grad_gamma
-    #     self.beta -= learning_rate * grad_beta
-    #     self.gradients["gamma"] = grad_gamma
-    #     self.gradients["beta"] = grad_beta
-    #     grad_normalized_input = error * self.gamma
-    #     grad_input = (
-    #         batch_size * grad_normalized_input
-    #         - np.sum(grad_normalized_input, axis=0)
-    #         - self.normalized_input
-    #         * np.sum(grad_normalized_input * self.normalized_input, axis=0)
-    #     ) / (batch_size * np.sqrt(self.batch_var + self.epsilon))
-    #     return grad_input
 
     def get_parameters(self) -> Tuple[np.ndarray, np.ndarray]:
         """Return the weights and biases of the layer as numpy arrays."""
