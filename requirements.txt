@@ -1,1 +1,7 @@
 numpy~=1.24.2
+
+
+# Development
+flake8
+pytest
+black
