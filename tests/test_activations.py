@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from ..activations import Sigmoid, ReLU, LeakyReLU, Tanh, Linear, SoftMax
+from activations import Sigmoid, ReLU, LeakyReLU, Tanh, Linear, SoftMax
 
 
 class TestSigmoid:
