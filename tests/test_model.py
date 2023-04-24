@@ -1,5 +1,6 @@
 from typing import Type
 import pytest
+from pytest import FixtureRequest
 import numpy as np
 from inventronet.optimizers import StochasticGradientDescent
 
@@ -10,18 +11,27 @@ from inventronet.models import Sequential
 from inventronet.layers import Dense
 from inventronet.losses import MeanSquaredError
 from inventronet.losses.loss import Loss
-from inventronet.metrics import Accuracy
+
+import inspect
+import inventronet.metrics as metrics_module
 from inventronet.metrics.metric import Metric
+
+# Get all classes in the metrics module that are subclasses of Metric
+all_metrics = [
+    metric
+    for _, metric in inspect.getmembers(metrics_module, inspect.isclass)
+    if issubclass(metric, Metric) and metric != Metric
+]
+
+
+@pytest.fixture(params=all_metrics)
+def metric(request: FixtureRequest) -> Type[Metric]:
+    yield request.param()
 
 
 @pytest.fixture
 def loss() -> Type[Loss]:
     yield MeanSquaredError()
-
-
-@pytest.fixture
-def metric() -> Type[Metric]:
-    yield Accuracy()
 
 
 @pytest.fixture
