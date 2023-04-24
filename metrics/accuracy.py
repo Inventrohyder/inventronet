@@ -1,4 +1,3 @@
-# Define the accuracy metric
 import numpy as np
 from .metric import Metric
 

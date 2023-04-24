@@ -6,3 +6,4 @@ flake8
 pytest
 black
 hypothesis
+ruff

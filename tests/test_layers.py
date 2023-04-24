@@ -350,7 +350,7 @@ class TestDropout:
             assert dropout.dropout_rate == dropout_rate
 
         def test_droput_mask(self, dropout: Dropout):
-            assert dropout.mask == None
+            assert dropout.mask is None
 
     class TestForward:
         def test_output_shape(
