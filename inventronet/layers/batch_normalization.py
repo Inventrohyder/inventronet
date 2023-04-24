@@ -69,15 +69,12 @@ class BatchNormalization(Layer):
     def backward(
         self,
         error: np.ndarray,
-        learning_rate: float,
         prev_output: np.ndarray = None,
-        **kwargs,
     ) -> np.ndarray:
         """Perform the backward propagation on the layer.
 
         Args:
             error: The error array of shape (batch_size, output_dim).
-            learning_rate: The learning rate for the parameter update.
             prev_output: The previous layer output, not used in this layer.
 
         Returns:
@@ -86,10 +83,10 @@ class BatchNormalization(Layer):
         batch_size = error.shape[0]
         grad_gamma = np.sum(error * self.normalized_input, axis=0)
         grad_beta = np.sum(error, axis=0)
-        self.gamma -= learning_rate * grad_gamma
-        self.beta -= learning_rate * grad_beta
+
         self.gradients["gamma"] = grad_gamma
         self.gradients["beta"] = grad_beta
+
         grad_normalized_input = error * self.gamma
         grad_input = (
             batch_size * grad_normalized_input

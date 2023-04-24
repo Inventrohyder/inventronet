@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Type
 import pytest
 
 
@@ -10,6 +10,9 @@ from inventronet.activations import Sigmoid
 from inventronet.layers import Dense, Dropout, BatchNormalization
 from inventronet.layers.shape_error import ShapeError
 from hypothesis import given, settings, strategies as st
+
+from inventronet.optimizers import StochasticGradientDescent
+from inventronet.optimizers.optimizer import Optimizer
 
 
 def generate_random_array(shape):
@@ -34,6 +37,12 @@ def random_error(random_input: np.ndarray) -> np.ndarray:
 @pytest.fixture
 def random_biases(random_error: np.ndarray) -> np.ndarray:
     yield generate_random_array((random_error.shape[1],)) * 2
+
+
+@pytest.fixture
+def optimizer() -> Type[Optimizer]:
+    learning_rate = 0.01
+    yield StochasticGradientDescent(learning_rate=learning_rate)
 
 
 @pytest.fixture
@@ -98,35 +107,33 @@ class TestDense:
         """
         dense.forward(random_input)
         try:
-            dense.backward(random_error, 0.01)
+            dense.backward(random_error)
         except Exception as e:
             pytest.fail(f"Differentiability test failed with exception: {e}")
 
-    def test_weight_updates(
+    def test_weight_gradients(
         self, dense: Dense, random_input: np.ndarray, random_error: np.ndarray
     ):
         """
-        Test the weight update process after a backward pass. Ensures
-        that the Dense layer's weights are updated after backward propagation.
+        Test the weight gradient computation after a backward pass. Ensures
+        that the Dense layer's weight gradients are computed after backward propagation.
         """
-        learning_rate = 0.01
-        original_weights = dense.weights.copy()
         dense.forward(random_input)
-        dense.backward(random_error, learning_rate)
-        assert not np.allclose(dense.weights, original_weights, atol=1e-6)
+        dense.backward(random_error)
+        assert "weights" in dense.gradients
+        assert dense.gradients["weights"].shape == dense.weights.shape
 
-    def test_bias_updates(
+    def test_bias_gradients(
         self, dense_with_bias: Dense, random_input: np.ndarray, random_error: np.ndarray
     ):
         """
-        Test the bias update process after a backward pass. Ensures
-        that the Dense layer's biases are updated after backward propagation.
+        Test the bias gradient computation after a backward pass. Ensures
+        that the Dense layer's bias gradients are computed after backward propagation.
         """
-        learning_rate = 0.01
-        original_biases = dense_with_bias.biases.copy()
         dense_with_bias.forward(random_input)
-        dense_with_bias.backward(random_error, learning_rate)
-        assert not np.allclose(dense_with_bias.biases, original_biases, atol=1e-6)
+        dense_with_bias.backward(random_error)
+        assert "biases" in dense_with_bias.gradients
+        assert dense_with_bias.gradients["biases"].shape == dense_with_bias.biases.shape
 
     class TestDenseInit:
         def test_name(self, dense: Dense):
@@ -185,23 +192,7 @@ class TestDense:
             )
             # Assert that the output of the backward method is close to the
             # expected output
-            assert np.allclose(
-                dense.backward(random_error, 0.01), expected_output, atol=1e-3
-            )
-
-        def test_backward_update_weights(
-            self,
-            random_input: np.ndarray,
-            random_error: np.ndarray,
-            sigmoid: Sigmoid,
-            dense: Dense,
-            forward_output_train: np.ndarray,
-        ):
-            expected_weights: np.ndarray = dense.weights - 0.01 * np.dot(
-                random_input.T,
-                random_error * sigmoid.derivative(forward_output_train),
-            )
-            assert np.allclose(dense.weights, expected_weights, atol=0.1)
+            assert np.allclose(dense.backward(random_error), expected_output, atol=1e-3)
 
     class TestBackwardUpdateWeightAndBiases:
         def test_updated_weights(
@@ -211,9 +202,11 @@ class TestDense:
             sigmoid: Sigmoid,
             dense_with_bias: Dense,
             forward_output_with_bias: np.ndarray,
+            optimizer: Type[Optimizer],
         ):
             original_weights = dense_with_bias.weights.copy()
-            dense_with_bias.backward(random_error, 0.01)
+            dense_with_bias.backward(random_error)
+            optimizer.update(dense_with_bias.parameters, dense_with_bias.gradients)
             expected_weights: np.ndarray = original_weights - 0.01 * np.dot(
                 random_input.T,
                 random_error * sigmoid.derivative(forward_output_with_bias),
@@ -226,9 +219,11 @@ class TestDense:
             sigmoid: Sigmoid,
             dense_with_bias: Dense,
             forward_output_with_bias: np.ndarray,
+            optimizer: Type[Optimizer],
         ):
             original_bias = dense_with_bias.biases.copy()
-            dense_with_bias.backward(random_error, 0.01)
+            dense_with_bias.backward(random_error)
+            optimizer.update(dense_with_bias.parameters, dense_with_bias.gradients)
             expected_bias: np.ndarray = original_bias - 0.01 * np.sum(
                 random_error * sigmoid.derivative(forward_output_with_bias), axis=0
             )
@@ -298,7 +293,7 @@ class TestDropout:
         dropout = Dropout(dropout_rate=dropout_rate, input_dim=input_dim)
         output_array = dropout.forward(random_input, training=training)
         error = generate_random_array(output_array.shape)
-        gradient_array = dropout.backward(error, learning_rate=0.01, training=training)
+        gradient_array = dropout.backward(error, training=training)
 
         assert gradient_array.shape == random_input.shape
 
@@ -343,7 +338,7 @@ class TestDropout:
 
         with pytest.raises(ShapeError):
             invalid_error = generate_random_array((2, 3, 4))
-            dropout.backward(invalid_error, learning_rate=0.01, training=training)
+            dropout.backward(invalid_error, training=training)
 
     class TestDroputInit:
         def test_droput_rate(self, dropout: Dropout, dropout_rate: float):
@@ -384,9 +379,7 @@ class TestDropout:
         ):
             output_array = dropout.forward(random_input, training=training)
             error = np.random.randn(*output_array.shape)
-            gradient_array = dropout.backward(
-                error, learning_rate=0.01, training=training
-            )
+            gradient_array = dropout.backward(error, training=training)
             assert gradient_array.shape == random_input.shape
 
         def test_gradient_value(
@@ -398,9 +391,7 @@ class TestDropout:
         ):
             output_array = dropout.forward(random_input, training=training)
             error = np.random.randn(*output_array.shape)
-            gradient_array = dropout.backward(
-                error, learning_rate=0.01, training=training
-            )
+            gradient_array = dropout.backward(error, training=training)
             assert np.allclose(
                 gradient_array, error * dropout.mask / (1 - dropout_rate)
             )
@@ -531,12 +522,16 @@ class TestBatchNormalization:
         batch_normalization: BatchNormalization,
         random_input: np.ndarray,
         random_error: np.ndarray,
+        optimizer: Type[Optimizer],
     ):
-        learning_rate = 0.01
         original_gamma = batch_normalization.gamma.copy()
         original_beta = batch_normalization.beta.copy()
+
         batch_normalization.forward(random_input, training=True)
-        batch_normalization.backward(random_error, learning_rate)
+        batch_normalization.backward(random_error)
+
+        optimizer.update(batch_normalization.parameters, batch_normalization.gradients)
+
         assert not np.allclose(batch_normalization.gamma, original_gamma, atol=1e-6)
         assert not np.allclose(batch_normalization.beta, original_beta, atol=1e-6)
 
@@ -586,17 +581,10 @@ class TestBatchNormalization:
         def gradients(self, random_input: np.ndarray) -> np.ndarray:
             yield np.random.randn(*random_input.shape)
 
-        @pytest.fixture
-        def learning_rate(
-            self,
-        ) -> float:
-            yield 0.01
-
         def test_backward_pass(
             self,
             batch_normalization: BatchNormalization,
             gradients: np.ndarray,
-            learning_rate: float,
             random_input: np.ndarray,
             epsilon: float,
         ) -> None:
@@ -611,9 +599,7 @@ class TestBatchNormalization:
                 - normalized_input * np.mean(gradients * normalized_input, axis=0)
             ) / np.sqrt(batch_var + epsilon)
             batch_normalization.forward(random_input, training=True)
-            output = batch_normalization.backward(
-                gradients, learning_rate=learning_rate
-            )
+            output = batch_normalization.backward(gradients)
             assert np.allclose(output, expected_output, rtol=0.1)
 
         def test_backward_gamma_without_activation(
@@ -623,7 +609,7 @@ class TestBatchNormalization:
             gradients: np.ndarray,
         ):
             batch_normalization.forward(random_input, training=True)
-            batch_normalization.backward(gradients, learning_rate=0.01)
+            batch_normalization.backward(gradients)
 
             batch_mean = np.mean(random_input, axis=0)
             batch_var = np.var(random_input, axis=0)
@@ -642,7 +628,7 @@ class TestBatchNormalization:
             gradients: np.ndarray,
         ):
             batch_normalization.forward(random_input, training=True)
-            batch_normalization.backward(gradients, learning_rate=0.01)
+            batch_normalization.backward(gradients)
 
             expected_gradient_beta = np.sum(gradients, axis=0)
             assert np.allclose(

@@ -5,15 +5,13 @@ import numpy as np
 from inventronet.optimizers import StochasticGradientDescent
 
 from inventronet.optimizers.optimizer import Optimizer
-
-
 from inventronet.models import Sequential
 from inventronet.layers import Dense
-from inventronet.losses import MeanSquaredError
 from inventronet.losses.loss import Loss
 
 import inspect
 import inventronet.metrics as metrics_module
+import inventronet.losses as losses_module
 from inventronet.metrics.metric import Metric
 
 # Get all classes in the metrics module that are subclasses of Metric
@@ -23,15 +21,22 @@ all_metrics = [
     if issubclass(metric, Metric) and metric != Metric
 ]
 
+# Get all classes in the losses module that are subclasses of Loss
+all_losses = [
+    loss
+    for _, loss in inspect.getmembers(losses_module, inspect.isclass)
+    if issubclass(loss, Loss) and loss != Loss
+]
+
 
 @pytest.fixture(params=all_metrics)
 def metric(request: FixtureRequest) -> Type[Metric]:
     yield request.param()
 
 
-@pytest.fixture
-def loss() -> Type[Loss]:
-    yield MeanSquaredError()
+@pytest.fixture(params=all_losses)
+def loss(request: FixtureRequest) -> Type[Loss]:
+    yield request.param()
 
 
 @pytest.fixture
@@ -130,10 +135,15 @@ class TestFit:
         ):
             # Get the initial weights and biases of the layers
             w1, _ = dummy_compiled_sequential_model.layers[0].get_parameters()
+            print("Initial weights:", w1)
+
             # Fit the model for one epoch
-            dummy_compiled_sequential_model.fit(x, y, 1)
+            dummy_compiled_sequential_model.fit(x, y, 10)
+
             # Get the updated weights and biases of the layers
             w1_new, _ = dummy_compiled_sequential_model.layers[0].get_parameters()
+            print("Updated weights:", w1_new)
+
             # Check that the weights have changed
             assert not np.array_equal(w1, w1_new)
 

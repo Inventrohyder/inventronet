@@ -41,7 +41,6 @@ class Dropout(Layer):
     def backward(
         self,
         error: np.ndarray,
-        learning_rate: float,
         prev_output: np.ndarray = None,
         training: bool = False,
     ) -> np.ndarray:

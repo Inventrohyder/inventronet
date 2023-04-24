@@ -46,7 +46,7 @@ class Dense(Layer):
 
         self.gradients: Dict[str, np.ndarray] = {"weights": None, "biases": None}
 
-    def forward(self, inputs: np.ndarray, **kwargs) -> np.ndarray:
+    def forward(self, inputs: np.ndarray, training: bool) -> np.ndarray:
         """Perform the layer operation on the inputs.
 
         Args:
@@ -71,9 +71,7 @@ class Dense(Layer):
     def backward(
         self,
         error: np.ndarray,
-        learning_rate: float,
         prev_output: np.ndarray = None,
-        **kwargs,
     ) -> np.ndarray:
         if prev_output is None:
             prev_output = self.previous_layer_output
@@ -111,21 +109,6 @@ class Dense(Layer):
                 "The shapes of the error and the weights are incompatible."
             )
 
-        self.weights -= learning_rate * weight_gradient
-        if self.use_bias:
-            if bias_gradient.shape == self.biases.shape:
-                self.biases -= learning_rate * bias_gradient
-            elif len(bias_gradient.shape) == 2 and len(self.biases.shape) == 1:
-                self.biases -= learning_rate * np.broadcast_to(
-                    bias_gradient, self.biases.shape
-                )
-            elif len(bias_gradient.shape) == 1 and len(self.biases.shape) == 2:
-                self.biases -= learning_rate * bias_gradient.reshape(-1)
-            else:
-                raise ValueError(
-                    "The shapes of the bias gradient and the biases "
-                    + "are incompatible."
-                )
         self.gradients["weights"] = weight_gradient
         self.gradients["biases"] = bias_gradient
 

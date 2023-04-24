@@ -9,7 +9,10 @@ from ..activations.activation import Activation
 class Layer(ABC):
     @abstractmethod
     def __init__(
-        self, input_dim: int, output_dim: int, activation: Activation, **kwargs
+        self,
+        input_dim: int,
+        output_dim: int,
+        activation: Activation,
     ) -> None:
         """Initialize the layer with the given arguments.
 
@@ -17,19 +20,17 @@ class Layer(ABC):
             input_dim: The dimension of the input features.
             output_dim: The dimension of the output features.
             activation: The activation function for the layer.
-            **kwargs: The keyword arguments for the layer.
         """
         self.input_dim: int = input_dim
         self.output_dim: int = output_dim
         self.activation: Activation = activation
-        self.kwargs = kwargs
         self.parameters = None
         self.gradients = None
 
         self.previous_layer_output = None
 
     @abstractmethod
-    def forward(self, inputs: np.ndarray, **kwargs) -> np.ndarray:
+    def forward(self, inputs: np.ndarray, training: bool) -> np.ndarray:
         """Perform the layer operation on the inputs.
 
         Args:
@@ -44,9 +45,7 @@ class Layer(ABC):
     def backward(
         self,
         grad: np.ndarray,
-        learning_rate: float,
         prev_output: np.ndarray = None,
-        **kwargs,
     ) -> np.ndarray:
         """Perform the backward propagation on the layer.
 

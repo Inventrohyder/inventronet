@@ -99,9 +99,7 @@ class Sequential(Model):
                     if layer.previous_layer_output is not None
                     else x_train
                 )
-                layer_error = layer.backward(
-                    layer_error, self.optimizer.learning_rate, prev_output=layer_input
-                )
+                layer_error = layer.backward(layer_error, prev_output=layer_input)
                 self.optimizer.update(layer.parameters, layer.gradients)
 
     # Define a method for predicting the output for new data
