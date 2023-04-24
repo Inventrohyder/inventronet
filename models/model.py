@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List, Tuple, Type
 
 import numpy as np
 
@@ -14,7 +14,7 @@ class Model(ABC):
     def __init__(self) -> None:
         """Initialize an empty list of layers."""
         # Initialize an empty list of layers
-        self.layers: List[Layer] = []
+        self.layers: List[Type[Layer]] = []
 
     # Define an abstract method for adding a layer to the model
     @abstractmethod

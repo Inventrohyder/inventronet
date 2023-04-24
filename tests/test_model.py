@@ -1,5 +1,9 @@
+from typing import Type
 import pytest
 import numpy as np
+from ..optimizers import StochasticGradientDescent
+
+from ..optimizers.optimizer import Optimizer
 
 
 from ..models import Sequential
@@ -11,13 +15,18 @@ from ..metrics.metric import Metric
 
 
 @pytest.fixture
-def mse_loss() -> MeanSquaredError:
+def loss() -> Type[Loss]:
     yield MeanSquaredError()
 
 
 @pytest.fixture
-def accuracy_metric() -> Accuracy:
+def metric() -> Type[Metric]:
     yield Accuracy()
+
+
+@pytest.fixture
+def optimizer() -> Type[Optimizer]:
+    yield StochasticGradientDescent()
 
 
 @pytest.fixture
@@ -35,10 +44,13 @@ def dummy_sequential_model() -> Sequential:
 
 @pytest.fixture
 def dummy_compiled_sequential_model(
-    dummy_sequential_model: Sequential, mse_loss: Loss, accuracy_metric: Metric
+    dummy_sequential_model: Sequential,
+    loss: Type[Loss],
+    optimizer: Type[Optimizer],
+    metric: Type[Metric],
 ) -> Sequential:
     """Compile the sequential model with a loss function, and a metric."""
-    dummy_sequential_model.compile(mse_loss, accuracy_metric)
+    dummy_sequential_model.compile(loss, optimizer, [metric])
     # Return the model
     return dummy_sequential_model
 
@@ -60,13 +72,14 @@ class TestCompile:
     def test_model_loss(
         self,
         dummy_sequential_model: Sequential,
-        mse_loss: Loss,
-        accuracy_metric: Metric,
+        loss: Type[Loss],
+        optimizer: Type[Optimizer],
+        metric: Type[Metric],
     ):
         # Compile the model with a loss function and a metric
-        dummy_sequential_model.compile(mse_loss, accuracy_metric)
+        dummy_sequential_model.compile(loss, optimizer, [metric])
         # Check that the model has the loss function
-        assert dummy_sequential_model.loss == mse_loss
+        assert dummy_sequential_model.loss == loss
 
     def test_model_metric_before(self, dummy_sequential_model: Sequential):
         with pytest.raises(AttributeError):
@@ -75,13 +88,14 @@ class TestCompile:
     def test_model_metric(
         self,
         dummy_sequential_model: Sequential,
-        mse_loss: Loss,
-        accuracy_metric: Metric,
+        loss: Type[Loss],
+        optimizer: Type[Optimizer],
+        metric: Type[Metric],
     ):
         # Compile the model with a loss function and a metric
-        dummy_sequential_model.compile(mse_loss, accuracy_metric)
-        # Check that the model has the metric
-        assert dummy_sequential_model.metric == accuracy_metric
+        dummy_sequential_model.compile(loss, optimizer, [metric])
+        # Check that the model has the metrics
+        assert dummy_sequential_model.metrics == [metric]
 
 
 class TestFit:
@@ -105,7 +119,7 @@ class TestFit:
             # Get the initial weights and biases of the layers
             w1, _ = dummy_compiled_sequential_model.layers[0].get_parameters()
             # Fit the model for one epoch
-            dummy_compiled_sequential_model.fit(x, y, 1, learning_rate=0.1)
+            dummy_compiled_sequential_model.fit(x, y, 1)
             # Get the updated weights and biases of the layers
             w1_new, _ = dummy_compiled_sequential_model.layers[0].get_parameters()
             # Check that the weights have changed
@@ -120,7 +134,7 @@ class TestFit:
             # Get the initial weights and biases of the layers
             _, b1 = dummy_compiled_sequential_model.layers[0].get_parameters()
             # Fit the model for one epoch
-            dummy_compiled_sequential_model.fit(x, y, 1, learning_rate=0.1)
+            dummy_compiled_sequential_model.fit(x, y, 1)
             # Get the updated weights and biases of the layers
             _, b1_new = dummy_compiled_sequential_model.layers[0].get_parameters()
             # Check that the biases have changed
@@ -135,7 +149,7 @@ class TestFit:
             # Get the initial weights and biases of the layers
             w2, _ = dummy_compiled_sequential_model.layers[1].get_parameters()
             # Fit the model for one epoch
-            dummy_compiled_sequential_model.fit(x, y, 1, learning_rate=0.1)
+            dummy_compiled_sequential_model.fit(x, y, 1)
             # Get the updated weights and biases of the layers
             w2_new, _ = dummy_compiled_sequential_model.layers[1].get_parameters()
             # Check that the weights have changed
@@ -150,7 +164,7 @@ class TestFit:
             # Get the initial weights and biases of the layers
             _, b2 = dummy_compiled_sequential_model.layers[1].get_parameters()
             # Fit the model for one epoch
-            dummy_compiled_sequential_model.fit(x, y, 1, learning_rate=0.1)
+            dummy_compiled_sequential_model.fit(x, y, 1)
             # Get the updated weights and biases of the layers
             _, b2_new = dummy_compiled_sequential_model.layers[1].get_parameters()
             # Check that the biases have changed
@@ -164,7 +178,7 @@ class TestFit:
         y: np.ndarray,
     ):
         # Fit the model for one epoch
-        dummy_compiled_sequential_model.fit(x, y, 1, learning_rate=0.01)
+        dummy_compiled_sequential_model.fit(x, y, 1)
         # Capture the standard output
         captured = capsys.readouterr()
         # Check that the loss value is printed
@@ -176,14 +190,15 @@ class TestFit:
         capsys: pytest.CaptureFixture,
         x: np.ndarray,
         y: np.ndarray,
+        metric: Type[Metric],
     ):
         """Test the fit method prints the metric value."""
         # Fit the model for one epoch
-        dummy_compiled_sequential_model.fit(x, y, 1, learning_rate=0.01)
+        dummy_compiled_sequential_model.fit(x, y, 1)
         # Capture the standard output
         captured = capsys.readouterr()
         # Check that the metric value is printed
-        assert "Metric" in captured.out
+        assert f"{metric.__class__.__name__}" in captured.out
 
 
 # Define a test function that checks if the compile method of the sequential model assigns the loss function and the metric as attributes

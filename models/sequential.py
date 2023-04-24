@@ -1,5 +1,8 @@
 # Define a class for a sequential model
+from typing import List, Tuple, Type
 import numpy as np
+
+from ..optimizers.optimizer import Optimizer
 from ..losses.loss import Loss
 from ..metrics.metric import Metric
 from ..layers.layer import Layer
@@ -40,25 +43,25 @@ class Sequential(Model):
         # Append the layer to the list of layers
         self.layers.append(layer)
 
-    # Define a method for compiling the model with a loss function and a metric
-    def compile(self, loss: Loss, metric: Metric) -> None:
-        """Compile the model with a loss function and a metric.
+    def compile(
+        self, loss: Loss, optimizer: Optimizer, metrics: List[Type[Metric]]
+    ) -> None:
+        """Compile the model with a loss function, an optimizer, and metrics.
 
         Args:
             loss (Loss): The loss function to be used.
-            metric (Metric): The metric to be used.
+            optimizer (Optimizer): The optimizer to be used.
+            metrics (List[Metric]): The metrics to be used.
         """
-        # Store the loss function and the metric as attributes
         self.loss = loss
-        self.metric = metric
+        self.optimizer = optimizer
+        self.metrics = metrics
 
-    # Define a method for fitting the model on training data
     def fit(
         self,
         x_train: np.ndarray,
         y_train: np.ndarray,
         epochs: int,
-        learning_rate: float,
     ) -> None:
         """Fit the model on training data.
 
@@ -66,24 +69,27 @@ class Sequential(Model):
             x_train (np.ndarray): The input data for training.
             y_train (np.ndarray): The output data for training.
             epochs (int): The number of epochs to train the model.
-            learning_rate (float): The learning rate for updating the
-            weights and biases.
         """
-        # Loop over the epochs
         for epoch in range(epochs):
             # Forward pass the input data through the network
             layer_output = x_train
             for layer in self.layers:
                 layer_output = layer.forward(layer_output, training=True)
 
-            # Calculate the loss and the metric
+            # Calculate the loss and the metrics
             loss_value = self.loss.function(y_train, layer_output)
-            metric_value = self.metric.call(y_train, layer_output)
+            metric_values = [
+                metric.call(y_train, layer_output) for metric in self.metrics
+            ]
 
-            # Print the loss and the metric
-            print(
-                f"Epoch {epoch + 1}, Loss: {loss_value:.4f}, Metric: {metric_value:.4f}"
+            # Print the loss and the metrics
+            metrics_str = ", ".join(
+                [
+                    f"{metric.__class__.__name__}: {m:.4f}"
+                    for metric, m in zip(self.metrics, metric_values)
+                ]
             )
+            print(f"Epoch {epoch + 1}, Loss: {loss_value:.4f}, {metrics_str}")
 
             # Backward pass the error through the network
             layer_error = self.loss.gradient(y_train, layer_output)
@@ -94,11 +100,12 @@ class Sequential(Model):
                     else x_train
                 )
                 layer_error = layer.backward(
-                    layer_error, learning_rate, prev_output=layer_input, training=True
+                    layer_error, self.optimizer.learning_rate, prev_output=layer_input
                 )
+                self.optimizer.update(layer.parameters, layer.gradients)
 
     # Define a method for predicting the output for new data
-    def predict(self, x_test):
+    def predict(self, x_test: np.ndarray) -> np.ndarray:
         # Forward pass the input data through the network
         layer_output = x_test
         for layer in self.layers:
@@ -107,11 +114,13 @@ class Sequential(Model):
         return layer_output
 
     # Define a method for evaluating the model on test data
-    def evaluate(self, x_test, y_test):
+    def evaluate(
+        self, x_test: np.ndarray, y_test: np.ndarray
+    ) -> Tuple[float, List[float]]:
         # Predict the output for the test data
         y_pred = self.predict(x_test)
-        # Calculate the loss and the metric
+        # Calculate the loss and the metrics
         loss_value = self.loss.function(y_test, y_pred)
-        metric_value = self.metric.call(y_test, y_pred)
-        # Return the loss and the metric
-        return loss_value, metric_value
+        metric_values = [metric.call(y_test, y_pred) for metric in self.metrics]
+        # Return the loss and the metrics
+        return loss_value, metric_values
