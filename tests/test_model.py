@@ -2,10 +2,12 @@ import pytest
 import numpy as np
 
 
-from ..model import Sequential
+from ..models import Sequential
 from ..layers import Dense
-from ..loss import MeanSquaredError, Loss
-from ..metrics import Accuracy, Metric
+from ..losses import MeanSquaredError
+from ..losses.loss import Loss
+from ..metrics import Accuracy
+from ..metrics.metric import Metric
 
 
 @pytest.fixture
