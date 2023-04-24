@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 package_name = "inventronet"
-package_version = "0.1.0"
+package_version = "0.0.1-alpha"
 package_description = "A package for building and testing neural networks"
 
 # Read the README.md file
@@ -34,7 +34,7 @@ setup(
     version=package_version,
     description=package_description,
     long_description=package_long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     url=package_url,
     author=package_author,
     license=package_license,
