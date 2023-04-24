@@ -27,9 +27,11 @@ binary classification problem:
 import numpy as np
 from inventronet.activations import Sigmoid
 from inventronet.layers import Dense
-from inventronet.loss import MSE
+from inventronet.losses import MSE
 from inventronet.metrics import Accuracy, Precision
-from inventronet.model import Sequential
+from inventronet.models import Sequential
+from inventronet.optimizers import StochasticGradientDescent
+
 
 
 epochs = 10000
@@ -48,8 +50,8 @@ model.add(Dense(input_dim=4, output_dim=1, activation=Sigmoid()))
 loss = MSE()
 metric = Precision()
 
-# Compile the model with the loss function and the metric
-model.compile(loss, metric)
+# Compile the model with the loss function, optimizer and the metric
+model.compile(loss, StochasticGradientDescent(), metric)
 
 # Fit the model on the training data
 model.fit(input_data, output_data, epochs, learning_rate)

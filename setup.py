@@ -34,6 +34,7 @@ setup(
     version=package_version,
     description=package_description,
     long_description=package_long_description,
+    long_description_content_type='text/markdown',
     url=package_url,
     author=package_author,
     license=package_license,
