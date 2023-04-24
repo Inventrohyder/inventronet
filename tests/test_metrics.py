@@ -38,7 +38,8 @@ def precision() -> Precision:
 )
 def test_accuracy_call(y_true, y_pred, expected, accuracy: Accuracy):
     # Compare the expected and actual outputs with a precision of 7 decimal places
-    np.testing.assert_almost_equal(accuracy.call(y_true, y_pred), expected, decimal=7)
+    np.testing.assert_almost_equal(
+        accuracy.call(y_true, y_pred), expected, decimal=7)
 
 
 # Write the tests for the precision metric
@@ -74,4 +75,5 @@ def test_accuracy_call(y_true, y_pred, expected, accuracy: Accuracy):
 )
 def test_precision_call(y_true, y_pred, expected, precision: Precision):
     # Compare the expected and actual outputs with a precision of 7 decimal places
-    np.testing.assert_almost_equal(precision.call(y_true, y_pred), expected, decimal=7)
+    np.testing.assert_almost_equal(
+        precision.call(y_true, y_pred), expected, decimal=7)
