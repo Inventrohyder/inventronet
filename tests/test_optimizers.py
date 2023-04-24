@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..optimizers import Adam, StochasticGradientDescent
+from inventronet.optimizers import Adam, StochasticGradientDescent
 
 
 class TestGradientDescent:

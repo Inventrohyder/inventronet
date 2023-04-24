@@ -5,10 +5,10 @@ import pytest
 import numpy as np
 from _pytest.capture import CaptureResult
 
-from ..activations import Sigmoid
+from inventronet.activations import Sigmoid
 
-from ..layers import Dense, Dropout, BatchNormalization
-from ..layers.shape_error import ShapeError
+from inventronet.layers import Dense, Dropout, BatchNormalization
+from inventronet.layers.shape_error import ShapeError
 from hypothesis import given, settings, strategies as st
 
 

@@ -1,7 +1,7 @@
 # Import the pytest module and the metric classes
 import numpy as np
 import pytest
-from ..metrics import Accuracy, Precision
+from inventronet.metrics import Accuracy, Precision
 
 
 # Create a fixture to instantiate the metric classes

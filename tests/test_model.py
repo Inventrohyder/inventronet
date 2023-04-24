@@ -1,17 +1,17 @@
-from typing import List, Type
+from typing import Type
 import pytest
 import numpy as np
-from ..optimizers import StochasticGradientDescent
+from inventronet.optimizers import StochasticGradientDescent
 
-from ..optimizers.optimizer import Optimizer
+from inventronet.optimizers.optimizer import Optimizer
 
 
-from ..models import Sequential
-from ..layers import Dense
-from ..losses import MeanSquaredError
-from ..losses.loss import Loss
-from ..metrics import Accuracy
-from ..metrics.metric import Metric
+from inventronet.models import Sequential
+from inventronet.layers import Dense
+from inventronet.losses import MeanSquaredError
+from inventronet.losses.loss import Loss
+from inventronet.metrics import Accuracy
+from inventronet.metrics.metric import Metric
 
 
 @pytest.fixture

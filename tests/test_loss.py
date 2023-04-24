@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from ..losses import (
+from inventronet.losses import (
     BinaryCrossEntropy,
     CategoricalCrossEntropy,
     MeanAbsoluteError,
