@@ -1,4 +1,4 @@
-from typing import Type
+from typing import List, Type
 import pytest
 import numpy as np
 from ..optimizers import StochasticGradientDescent
@@ -55,6 +55,18 @@ def dummy_compiled_sequential_model(
     return dummy_sequential_model
 
 
+@pytest.fixture
+def x() -> np.ndarray:
+    # Create some dummy input data
+    yield np.array([[0, 0, 1], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
+
+
+@pytest.fixture
+def y() -> np.ndarray:
+    # Create some dummy output data
+    yield np.array([[0], [1], [1], [0]])
+
+
 def test_add(dummy_sequential_model: Sequential):
     """Test the add method of the sequential model."""
     # Try to add a layer with input dimension 4 and output dimension 2
@@ -99,16 +111,6 @@ class TestCompile:
 
 
 class TestFit:
-    @pytest.fixture
-    def x(self) -> np.ndarray:
-        # Create some dummy input data
-        yield np.array([[0, 0, 1], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
-
-    @pytest.fixture
-    def y(self) -> np.ndarray:
-        # Create some dummy output data
-        yield np.array([[0], [1], [1], [0]])
-
     class TestFitUpdatesWeightsAndBiases:
         def test_layer_1_weights(
             self,
@@ -201,7 +203,89 @@ class TestFit:
         assert f"{metric.__class__.__name__}" in captured.out
 
 
-# Define a test function that checks if the compile method of the sequential model assigns the loss function and the metric as attributes
-# Define a test function that checks if the fit method of the sequential model updates the weights and biases of the layers and prints the loss and the metric values
-# Define a test function that checks if the predict method of the sequential model returns the output for the test data
-# Define a test function that checks if the evaluate method of the sequential model returns the loss and the metric values for the test data
+class TestSequentialModelProperties:
+    def test_layers_property(self, dummy_sequential_model: Sequential):
+        assert hasattr(dummy_sequential_model, "layers")
+        assert len(dummy_sequential_model.layers) == 2
+        assert all(isinstance(layer, Dense) for layer in dummy_sequential_model.layers)
+
+    def test_loss_property(
+        self, dummy_compiled_sequential_model: Sequential, loss: Type[Loss]
+    ):
+        assert hasattr(dummy_compiled_sequential_model, "loss")
+        assert dummy_compiled_sequential_model.loss == loss
+
+    def test_optimizer_property(
+        self, dummy_compiled_sequential_model: Sequential, optimizer: Type[Optimizer]
+    ):
+        assert hasattr(dummy_compiled_sequential_model, "optimizer")
+        assert dummy_compiled_sequential_model.optimizer == optimizer
+
+    def test_metrics_property(
+        self, dummy_compiled_sequential_model: Sequential, metric: Type[Metric]
+    ):
+        assert hasattr(dummy_compiled_sequential_model, "metrics")
+        assert len(dummy_compiled_sequential_model.metrics) == 1
+        assert dummy_compiled_sequential_model.metrics == [metric]
+
+
+def test_layer_compatibility(dummy_sequential_model: Sequential):
+    # Try to add a layer with input dimension 4 and output dimension 2
+    with pytest.raises(AssertionError):
+        dummy_sequential_model.add(Dense(4, 2))
+
+
+def test_layer_ordering(dummy_sequential_model: Sequential):
+    first_layer = dummy_sequential_model.layers[0]
+    second_layer = dummy_sequential_model.layers[1]
+
+    assert isinstance(first_layer, Dense)
+    assert isinstance(second_layer, Dense)
+
+    assert first_layer.output_dim == 2
+    assert second_layer.input_dim == 2
+
+
+def test_model_compilation(dummy_sequential_model: Sequential):
+    with pytest.raises(AttributeError):
+        dummy_sequential_model.loss
+
+    with pytest.raises(AttributeError):
+        dummy_sequential_model.optimizer
+
+    with pytest.raises(AttributeError):
+        dummy_sequential_model.metrics
+
+
+class TestPredict:
+    def test_predict_output_shape(
+        self, dummy_compiled_sequential_model: Sequential, x: np.ndarray
+    ):
+        predictions = dummy_compiled_sequential_model.predict(x)
+        assert predictions.shape == (x.shape[0], 1)
+
+    def test_predict_output_values(
+        self, dummy_compiled_sequential_model: Sequential, x: np.ndarray
+    ):
+        predictions = dummy_compiled_sequential_model.predict(x)
+        assert np.all((predictions >= 0) & (predictions <= 1))
+
+
+class TestEvaluate:
+    def test_evaluate_loss(
+        self,
+        dummy_compiled_sequential_model: Sequential,
+        x: np.ndarray,
+        y: np.ndarray,
+    ):
+        loss_value, _ = dummy_compiled_sequential_model.evaluate(x, y)
+        assert isinstance(loss_value, float)
+
+    def test_evaluate_metric(
+        self,
+        dummy_compiled_sequential_model: Sequential,
+        x: np.ndarray,
+        y: np.ndarray,
+    ):
+        _, metric_value = dummy_compiled_sequential_model.evaluate(x, y)
+        assert isinstance(metric_value, list)
