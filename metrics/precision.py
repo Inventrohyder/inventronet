@@ -1,20 +1,8 @@
-from abc import ABC, abstractmethod
-import numpy as np
-
-
-class Metric(ABC):
-    @abstractmethod
-    def call(self, y_true, y_pred):
-        pass
-
-
-# Define the accuracy metric
-class Accuracy(Metric):
-    def call(self, y_true, y_pred):
-        return np.mean(y_true == np.round(y_pred))
-
-
 # Define the precision metric
+import numpy as np
+from .metric import Metric
+
+
 class Precision(Metric):
     def call(self, y_true, y_pred):
         # Round the predictions to get the binary labels
