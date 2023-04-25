@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, Type
 
 import numpy as np
 
@@ -13,7 +13,7 @@ class Layer(ABC):
             self,
             input_dim: int,
             output_dim: int,
-            activation: Activation,
+            activation: Type[Activation],
     ) -> None:
         """Initialize the layer with the given arguments.
 
@@ -24,7 +24,7 @@ class Layer(ABC):
         """
         self.input_dim: int = input_dim
         self.output_dim: int = output_dim
-        self.activation: Activation = activation
+        self.activation: Type[Activation] = activation
         self.parameters = None
         self.gradients = None
 

@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Tuple, Type
 import numpy as np
 
 from ..activations.activation import Activation
@@ -10,7 +10,7 @@ class Dense(Layer):
         self,
         input_dim: int,
         output_dim: int,
-        activation: Activation = None,
+        activation: Type[Activation] = None,
         use_bias: bool = True,
         weight_initializer: Callable = np.random.uniform,
         bias_initializer: Callable = np.zeros,

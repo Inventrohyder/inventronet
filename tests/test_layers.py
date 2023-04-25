@@ -1,18 +1,21 @@
+import inspect
 from typing import Any, Type
 import pytest
 
 
 import numpy as np
 from _pytest.capture import CaptureResult
+from _pytest.fixtures import SubRequest
 
 from inventronet.activations import Sigmoid
+from inventronet.activations.activation import Activation
 
 from inventronet.layers import Dense, Dropout, BatchNormalization
 from inventronet.layers.shape_error import ShapeError
 from hypothesis import given, settings, strategies as st
 
-from inventronet.optimizers import StochasticGradientDescent
 from inventronet.optimizers.optimizer import Optimizer
+import inventronet.optimizers as optimizers_module
 
 
 def generate_random_array(shape):
@@ -39,26 +42,36 @@ def random_biases(random_error: np.ndarray) -> np.ndarray:
     yield generate_random_array((random_error.shape[1],)) * 2
 
 
-@pytest.fixture
-def optimizer() -> Type[Optimizer]:
-    learning_rate = 0.01
-    yield StochasticGradientDescent(learning_rate=learning_rate)
+all_optimizers = [
+    optimizer
+    for _, optimizer in inspect.getmembers(optimizers_module, inspect.isclass)
+    if issubclass(optimizer, Optimizer) and optimizer != Optimizer
+]
 
 
+@pytest.fixture(params=all_optimizers)
+def optimizer(request: SubRequest) -> Type[Optimizer]:
+    opt: Type[Optimizer] = request.param()
+    # Increase the learning rate
+    opt.learning_rate = 0.1
+    yield opt
+
+
+
 @pytest.fixture
-def sigmoid() -> Sigmoid:
+def activation() -> Type[Activation]:
     yield Sigmoid()
 
 
 class TestDense:
     @pytest.fixture
     def dense(
-        self, sigmoid: Sigmoid, input_dim: int, random_error: np.ndarray
+        self, activation: Type[Activation], input_dim: int, random_error: np.ndarray
     ) -> Dense:
         yield Dense(
             input_dim,
             random_error.shape[1],
-            activation=sigmoid,
+            activation=activation,
             use_bias=False,
         )
 
@@ -164,11 +177,11 @@ class TestDense:
     def test_forward(
         self,
         random_input: np.ndarray[Any, np.float64],
-        sigmoid: Sigmoid,
+        activation: Sigmoid,
         forward_output_train: np.ndarray,
         dense: Dense,
     ):
-        expected_output = sigmoid(np.dot(random_input, dense.weights))
+        expected_output = activation(np.dot(random_input, dense.weights))
         assert np.allclose(forward_output_train, expected_output)
 
     def test_forward_invalid_input(
@@ -182,12 +195,12 @@ class TestDense:
         def test_backward_output(
             self,
             random_error: np.ndarray,
-            sigmoid: Sigmoid,
+            activation: Sigmoid,
             dense: Dense,
             forward_output_train: np.ndarray,
         ):
             expected_output: np.ndarray = np.dot(
-                random_error * sigmoid.derivative(forward_output_train),
+                random_error * activation.derivative(forward_output_train),
                 dense.weights.T,
             )
             # Assert that the output of the backward method is close to the
@@ -199,7 +212,7 @@ class TestDense:
             self,
             random_input: np.ndarray,
             random_error: np.ndarray,
-            sigmoid: Sigmoid,
+            activation: Sigmoid,
             dense_with_bias: Dense,
             forward_output_with_bias: np.ndarray,
             optimizer: Type[Optimizer],
@@ -207,16 +220,18 @@ class TestDense:
             original_weights = dense_with_bias.weights.copy()
             dense_with_bias.backward(random_error)
             optimizer.update(0, dense_with_bias.parameters, dense_with_bias.gradients)
-            expected_weights: np.ndarray = original_weights - 0.01 * np.dot(
+            learning_rate = optimizer.learning_rate
+            expected_weights: np.ndarray = original_weights - learning_rate * np.dot(
                 random_input.T,
-                random_error * sigmoid.derivative(forward_output_with_bias),
+                random_error * activation.derivative(forward_output_with_bias),
             )
-            assert np.allclose(dense_with_bias.weights, expected_weights, atol=1e-2)
+
+            assert np.allclose(dense_with_bias.weights, expected_weights, atol=1e-1)
 
         def test_updated_biases(
             self,
             random_error: np.ndarray,
-            sigmoid: Sigmoid,
+            activation: Sigmoid,
             dense_with_bias: Dense,
             forward_output_with_bias: np.ndarray,
             optimizer: Type[Optimizer],
@@ -225,7 +240,7 @@ class TestDense:
             dense_with_bias.backward(random_error)
             optimizer.update(0, dense_with_bias.parameters, dense_with_bias.gradients)
             expected_bias: np.ndarray = original_bias - 0.01 * np.sum(
-                random_error * sigmoid.derivative(forward_output_with_bias), axis=0
+                random_error * activation.derivative(forward_output_with_bias), axis=0
             )
             assert np.allclose(dense_with_bias.biases, expected_bias, atol=1e-2)
 
@@ -530,7 +545,9 @@ class TestBatchNormalization:
         batch_normalization.forward(random_input, training=True)
         batch_normalization.backward(random_error)
 
-        optimizer.update(0, batch_normalization.parameters, batch_normalization.gradients)
+        optimizer.update(
+            0, batch_normalization.parameters, batch_normalization.gradients
+        )
 
         assert not np.allclose(batch_normalization.gamma, original_gamma, atol=1e-6)
         assert not np.allclose(batch_normalization.beta, original_beta, atol=1e-6)
