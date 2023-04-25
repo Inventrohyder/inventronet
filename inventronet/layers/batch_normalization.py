@@ -24,6 +24,9 @@ class BatchNormalization(Layer):
               Defaults to 1e-5.
         """
         super().__init__(input_dim, output_dim, None)
+        self.normalized_input = None
+        self.batch_var = None
+        self.batch_mean = None
         self.gamma = np.ones((output_dim,))
         self.beta = np.zeros((output_dim,))
         self.running_mean = np.zeros((output_dim,))
@@ -70,10 +73,12 @@ class BatchNormalization(Layer):
         self,
         error: np.ndarray,
         prev_output: np.ndarray = None,
+        training: bool = False,
     ) -> np.ndarray:
         """Perform the backward propagation on the layer.
 
         Args:
+            training: A boolean indicating whether the layer is in training
             error: The error array of shape (batch_size, output_dim).
             prev_output: The previous layer output, not used in this layer.
 

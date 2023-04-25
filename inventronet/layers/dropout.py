@@ -19,6 +19,7 @@ class Dropout(Layer):
         """Perform the layer operation on the inputs.
 
         Args:
+            training: A boolean indicating whether the layer is in training
             inputs: The input array of any shape.
 
         Returns:
@@ -47,8 +48,9 @@ class Dropout(Layer):
         """Perform the backpropagation on the error.
 
         Args:
+            training:
+            prev_output:
             error: The error array of the same shape as the output.
-            learning_rate: The learning rate for the weight update.
 
         Returns:
             The output error of the same shape as the input.

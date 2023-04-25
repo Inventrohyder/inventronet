@@ -17,7 +17,7 @@ class Sequential(Model):
         super().__init__()
 
     # Define a method for adding a layer to the model
-    def add(self, layer: Layer) -> None:
+    def add(self, layer: Type[Layer]) -> None:
         """Add a layer to the model.
 
         Args:
@@ -44,7 +44,7 @@ class Sequential(Model):
         self.layers.append(layer)
 
     def compile(
-        self, loss: Loss, optimizer: Optimizer, metrics: List[Type[Metric]]
+        self, loss: Type[Loss], optimizer: Type[Optimizer], metrics: List[Type[Metric]]
     ) -> None:
         """Compile the model with a loss function, an optimizer, and metrics.
 

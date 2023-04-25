@@ -1,4 +1,3 @@
-# Import the pytest module and the metric classes
 import numpy as np
 import pytest
 from inventronet.metrics import Accuracy, Precision

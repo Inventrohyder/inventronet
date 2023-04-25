@@ -30,6 +30,7 @@ class Dense(Layer):
                 Defaults to np.zeros.
         """
         super().__init__(input_dim, output_dim, activation)
+        self.pre_activation_output = None
         self.use_bias: bool = use_bias
         self.weight_initializer: Callable = weight_initializer
         self.bias_initializer: Callable = bias_initializer
@@ -50,6 +51,7 @@ class Dense(Layer):
         """Perform the layer operation on the inputs.
 
         Args:
+            training: A boolean indicating whether the layer is in training
             inputs: The input array of shape (batch_size, input_dim).
 
         Returns:
@@ -72,6 +74,7 @@ class Dense(Layer):
             self,
             error: np.ndarray,
             prev_output: np.ndarray = None,
+            training: bool = False,
     ) -> np.ndarray:
         if prev_output is None:
             prev_output = self.previous_layer_output

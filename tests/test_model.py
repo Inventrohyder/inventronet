@@ -1,6 +1,6 @@
 from typing import Type
 import pytest
-from pytest import FixtureRequest
+from _pytest.fixtures import SubRequest
 import numpy as np
 
 from inventronet.optimizers.optimizer import Optimizer
@@ -37,18 +37,22 @@ all_optimizers = [
 
 
 @pytest.fixture(params=all_metrics)
-def metric(request: FixtureRequest) -> Type[Metric]:
+def metric(request: SubRequest) -> Type[Metric]:
     yield request.param()
 
 
 @pytest.fixture(params=all_losses)
-def loss(request: FixtureRequest) -> Type[Loss]:
+def loss(request: SubRequest) -> Type[Loss]:
     yield request.param()
 
 
 @pytest.fixture(params=all_optimizers)
-def optimizer(request: FixtureRequest) -> Type[Optimizer]:
-    yield request.param()
+def optimizer(request: SubRequest) -> Type[Optimizer]:
+    opt: Type[Optimizer] = request.param()
+    # Increase the learning rate
+    opt.learning_rate = 0.1
+    yield opt
+
 
 
 @pytest.fixture
@@ -80,13 +84,14 @@ def dummy_compiled_sequential_model(
 @pytest.fixture
 def x() -> np.ndarray:
     # Create some dummy input data
-    yield np.array([[0, 0, 1], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
+    yield np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 1, 0]])
 
 
 @pytest.fixture
 def y() -> np.ndarray:
     # Create some dummy output data
-    yield np.array([[0], [1], [1], [0]])
+    yield np.array([[0], [0.5], [0.5], [1]])
+
 
 
 def test_add(dummy_sequential_model: Sequential):

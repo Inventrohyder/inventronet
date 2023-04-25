@@ -1,18 +1,19 @@
 from abc import ABC, abstractmethod
-
 from typing import Tuple
+
 import numpy as np
 
 from ..activations.activation import Activation
 
 
 class Layer(ABC):
+
     @abstractmethod
     def __init__(
-        self,
-        input_dim: int,
-        output_dim: int,
-        activation: Activation,
+            self,
+            input_dim: int,
+            output_dim: int,
+            activation: Activation,
     ) -> None:
         """Initialize the layer with the given arguments.
 
@@ -34,6 +35,7 @@ class Layer(ABC):
         """Perform the layer operation on the inputs.
 
         Args:
+            training: A boolean indicating whether the layer is in training
             inputs: The input array of shape (batch_size, input_dim).
 
         Returns:
@@ -43,15 +45,16 @@ class Layer(ABC):
 
     @abstractmethod
     def backward(
-        self,
-        grad: np.ndarray,
-        prev_output: np.ndarray = None,
+            self,
+            grad: np.ndarray,
+            prev_output: np.ndarray = None,
+            training: bool = False,
     ) -> np.ndarray:
         """Perform the backward propagation on the layer.
 
         Args:
-            error: The error array of shape (batch_size, output_dim).
-            learning_rate: The learning rate for the gradient update.
+            training: A boolean indicating whether the layer is in training
+            grad: The gradient array of shape (batch_size, output_dim).
             prev_output: The previous output array of
                 shape (batch_size, input_dim).
 
