@@ -206,7 +206,7 @@ class TestDense:
         ):
             original_weights = dense_with_bias.weights.copy()
             dense_with_bias.backward(random_error)
-            optimizer.update(dense_with_bias.parameters, dense_with_bias.gradients)
+            optimizer.update(0, dense_with_bias.parameters, dense_with_bias.gradients)
             expected_weights: np.ndarray = original_weights - 0.01 * np.dot(
                 random_input.T,
                 random_error * sigmoid.derivative(forward_output_with_bias),
@@ -223,7 +223,7 @@ class TestDense:
         ):
             original_bias = dense_with_bias.biases.copy()
             dense_with_bias.backward(random_error)
-            optimizer.update(dense_with_bias.parameters, dense_with_bias.gradients)
+            optimizer.update(0, dense_with_bias.parameters, dense_with_bias.gradients)
             expected_bias: np.ndarray = original_bias - 0.01 * np.sum(
                 random_error * sigmoid.derivative(forward_output_with_bias), axis=0
             )
@@ -530,7 +530,7 @@ class TestBatchNormalization:
         batch_normalization.forward(random_input, training=True)
         batch_normalization.backward(random_error)
 
-        optimizer.update(batch_normalization.parameters, batch_normalization.gradients)
+        optimizer.update(0, batch_normalization.parameters, batch_normalization.gradients)
 
         assert not np.allclose(batch_normalization.gamma, original_gamma, atol=1e-6)
         assert not np.allclose(batch_normalization.beta, original_beta, atol=1e-6)

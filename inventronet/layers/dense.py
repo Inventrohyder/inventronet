@@ -46,7 +46,7 @@ class Dense(Layer):
 
         self.gradients: Dict[str, np.ndarray] = {"weights": None, "biases": None}
 
-    def forward(self, inputs: np.ndarray, training: bool) -> np.ndarray:
+    def forward(self, inputs: np.ndarray, training: bool = False) -> np.ndarray:
         """Perform the layer operation on the inputs.
 
         Args:
@@ -69,9 +69,9 @@ class Dense(Layer):
             return output
 
     def backward(
-        self,
-        error: np.ndarray,
-        prev_output: np.ndarray = None,
+            self,
+            error: np.ndarray,
+            prev_output: np.ndarray = None,
     ) -> np.ndarray:
         if prev_output is None:
             prev_output = self.previous_layer_output
@@ -94,23 +94,18 @@ class Dense(Layer):
                     + "are incompatible."
                 )
 
-        weight_gradient = np.dot(prev_output.T, error)
+        weight_gradient = prev_output.T @ error
 
-        bias_gradient = np.sum(error, axis=0)
-
-        if len(error.shape) == 2 and len(self.weights.shape) == 2:
-            input_gradient = np.dot(error, self.weights.T)
-        elif len(error.shape) == 2 and len(self.weights.shape) == 3:
-            input_gradient = np.einsum("ij,jkl->ikl", error, self.weights)
-        elif len(error.shape) == 1 and len(self.weights.shape) == 2:
-            input_gradient = np.dot(error, self.weights.T).T
+        if self.use_bias:
+            bias_gradient = np.sum(error, axis=0)
         else:
-            raise ValueError(
-                "The shapes of the error and the weights are incompatible."
-            )
+            bias_gradient = None
+
+        input_gradient = error @ self.weights.T
 
         self.gradients["weights"] = weight_gradient
-        self.gradients["biases"] = bias_gradient
+        if self.use_bias:
+            self.gradients["biases"] = bias_gradient
 
         return input_gradient
 

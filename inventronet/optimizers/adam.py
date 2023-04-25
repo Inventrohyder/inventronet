@@ -14,24 +14,22 @@ class Adam(Optimizer):
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
-        self.m = {}
-        self.v = {}
+        self.m = {}  # Initialize m as an empty dictionary
+        self.v = {}  # Initialize v as an empty dictionary
         self.t = 0
 
-    def update(self, params: dict, gradients: dict):
-        if not self.m:
-            self.m = {key: np.zeros_like(value) for key, value in params.items()}
-            self.v = {key: np.zeros_like(value) for key, value in params.items()}
+    def update(self, layer_id: int, params: dict, gradients: dict):
+        if layer_id not in self.m:
+            self.m[layer_id] = {key: np.zeros_like(value) for key, value in params.items()}
+            self.v[layer_id] = {key: np.zeros_like(value) for key, value in params.items()}
 
         self.t += 1
 
         for key in params.keys():
-            self.m[key] = self.beta1 * self.m[key] + (1 - self.beta1) * gradients[key]
-            self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * np.square(
-                gradients[key]
-            )
+            self.m[layer_id][key] = self.beta1 * self.m[layer_id][key] + (1 - self.beta1) * gradients[key]
+            self.v[layer_id][key] = self.beta2 * self.v[layer_id][key] + (1 - self.beta2) * np.square(gradients[key])
 
-            m_hat = self.m[key] / (1 - self.beta1**self.t)
-            v_hat = self.v[key] / (1 - self.beta2**self.t)
+            m_hat = self.m[layer_id][key] / (1 - self.beta1 ** self.t)
+            v_hat = self.v[layer_id][key] / (1 - self.beta2 ** self.t)
 
             params[key] -= self.learning_rate * m_hat / (np.sqrt(v_hat) + self.epsilon)

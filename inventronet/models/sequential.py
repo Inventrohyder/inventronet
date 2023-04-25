@@ -58,10 +58,10 @@ class Sequential(Model):
         self.metrics = metrics
 
     def fit(
-        self,
-        x_train: np.ndarray,
-        y_train: np.ndarray,
-        epochs: int,
+            self,
+            x_train: np.ndarray,
+            y_train: np.ndarray,
+            epochs: int,
     ) -> None:
         """Fit the model on training data.
 
@@ -75,6 +75,7 @@ class Sequential(Model):
             layer_output = x_train
             for layer in self.layers:
                 layer_output = layer.forward(layer_output, training=True)
+                print("Layer Output Shape:", layer_output.shape)  # Add this print statement
 
             # Calculate the loss and the metrics
             loss_value = self.loss.function(y_train, layer_output)
@@ -93,14 +94,24 @@ class Sequential(Model):
 
             # Backward pass the error through the network
             layer_error = self.loss.gradient(y_train, layer_output)
-            for layer in reversed(self.layers):
+            for layer_index, layer in enumerate(reversed(self.layers)):
                 layer_input = (
                     layer.previous_layer_output
                     if layer.previous_layer_output is not None
                     else x_train
                 )
                 layer_error = layer.backward(layer_error, prev_output=layer_input)
-                self.optimizer.update(layer.parameters, layer.gradients)
+
+                # Add the following print statements to debug the shapes
+                print("Layer Parameters Shapes:", {key: value.shape for key, value in layer.parameters.items()})
+                print("Layer Gradients Shapes:", {key: value.shape for key, value in layer.gradients.items()})
+
+                # Check shapes before updating the optimizer
+                for key in layer.parameters.keys():
+                    assert layer.parameters[key].shape == layer.gradients[
+                        key].shape, f"Parameter shape {layer.parameters[key].shape} does not match gradient shape {layer.gradients[key].shape}"
+
+                self.optimizer.update(layer_index, layer.parameters, layer.gradients)
 
     # Define a method for predicting the output for new data
     def predict(self, x_test: np.ndarray) -> np.ndarray:

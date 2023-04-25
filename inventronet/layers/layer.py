@@ -30,7 +30,7 @@ class Layer(ABC):
         self.previous_layer_output = None
 
     @abstractmethod
-    def forward(self, inputs: np.ndarray, training: bool) -> np.ndarray:
+    def forward(self, inputs: np.ndarray, training: bool = False) -> np.ndarray:
         """Perform the layer operation on the inputs.
 
         Args:

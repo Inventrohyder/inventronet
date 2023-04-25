@@ -6,6 +6,7 @@ import numpy as np
 from ..layers.layer import Layer
 from ..losses.loss import Loss
 from ..metrics.metric import Metric
+from ..optimizers.optimizer import Optimizer
 
 
 # Define an abstract base class for a model
@@ -29,23 +30,25 @@ class Model(ABC):
     # Define an abstract method for compiling the model with a loss
     # function and a metric
     @abstractmethod
-    def compile(self, loss: Loss, metric: Metric) -> None:
+    def compile(
+            self, loss: Loss, optimizer: Optimizer, metrics: List[Type[Metric]]
+    ) -> None:
         """Compile the model with a loss function and a metric.
 
         Args:
             loss (Loss): The loss function to be used.
-            metric (Metric): The metric to be used.
+            optimizer (Optimizer): The optimizer to be used.
+            metrics (Metric): The metrics to be used.
         """
         raise NotImplementedError("The compile method must be implemented.")
 
     # Define an abstract method for fitting the model on training data
     @abstractmethod
     def fit(
-        self,
-        x_train: np.ndarray,
-        y_train: np.ndarray,
-        epochs: int,
-        learning_rate: float,
+            self,
+            x_train: np.ndarray,
+            y_train: np.ndarray,
+            epochs: int,
     ) -> None:
         """Fit the model on training data.
 
@@ -53,8 +56,6 @@ class Model(ABC):
             x_train (np.ndarray): The input data for training.
             y_train (np.ndarray): The output data for training.
             epochs (int): The number of epochs to train the model.
-            learning_rate (float): The learning rate for updating the
-            weights and biases.
         """
         raise NotImplementedError("The fit method must be implemented.")
 

@@ -2,7 +2,6 @@ from typing import Type
 import pytest
 from pytest import FixtureRequest
 import numpy as np
-from inventronet.optimizers import StochasticGradientDescent
 
 from inventronet.optimizers.optimizer import Optimizer
 from inventronet.models import Sequential
@@ -12,6 +11,7 @@ from inventronet.losses.loss import Loss
 import inspect
 import inventronet.metrics as metrics_module
 import inventronet.losses as losses_module
+import inventronet.optimizers as optimizers_module
 from inventronet.metrics.metric import Metric
 
 # Get all classes in the metrics module that are subclasses of Metric
@@ -29,6 +29,13 @@ all_losses = [
 ]
 
 
+all_optimizers = [
+    optimizer
+    for _, optimizer in inspect.getmembers(optimizers_module, inspect.isclass)
+    if issubclass(optimizer, Optimizer) and optimizer != Optimizer
+]
+
+
 @pytest.fixture(params=all_metrics)
 def metric(request: FixtureRequest) -> Type[Metric]:
     yield request.param()
@@ -39,9 +46,9 @@ def loss(request: FixtureRequest) -> Type[Loss]:
     yield request.param()
 
 
-@pytest.fixture
-def optimizer() -> Type[Optimizer]:
-    yield StochasticGradientDescent()
+@pytest.fixture(params=all_optimizers)
+def optimizer(request: FixtureRequest) -> Type[Optimizer]:
+    yield request.param()
 
 
 @pytest.fixture
@@ -138,7 +145,7 @@ class TestFit:
             print("Initial weights:", w1)
 
             # Fit the model for one epoch
-            dummy_compiled_sequential_model.fit(x, y, 10)
+            dummy_compiled_sequential_model.fit(x, y, 1)
 
             # Get the updated weights and biases of the layers
             w1_new, _ = dummy_compiled_sequential_model.layers[0].get_parameters()
