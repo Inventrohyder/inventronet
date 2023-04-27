@@ -49,6 +49,7 @@ class Model(ABC):
             x_train: np.ndarray,
             y_train: np.ndarray,
             epochs: int,
+            validation_split: float = None,
     ) -> None:
         """Fit the model on training data.
 
@@ -56,10 +57,10 @@ class Model(ABC):
             x_train (np.ndarray): The input data for training.
             y_train (np.ndarray): The output data for training.
             epochs (int): The number of epochs to train the model.
+            validation_split (float, optional): The fraction of the data to use for validation. Default is None.
         """
         raise NotImplementedError("The fit method must be implemented.")
 
-    # Define an abstract method for predicting the output for new data
     @abstractmethod
     def predict(self, x_test: np.ndarray) -> np.ndarray:
         """Predict the output for new data.
@@ -74,7 +75,7 @@ class Model(ABC):
 
     # Define an abstract method for evaluating the model on test data
     @abstractmethod
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> Tuple[float, float]:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> Tuple[float, List[float]]:
         """Evaluate the model on test data.
 
         Args:
@@ -82,6 +83,6 @@ class Model(ABC):
             y_test (np.ndarray): The output data for testing.
 
         Returns:
-            Tuple[float, float]: The loss and the metric values for the test data.
+            Tuple[float, List[float]]: The loss and the metric values for the test data.
         """
         raise NotImplementedError("The evaluate method must be implemented.")

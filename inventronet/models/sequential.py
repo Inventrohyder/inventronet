@@ -9,6 +9,7 @@ from ..layers.layer import Layer
 from ..losses.loss import Loss
 from ..metrics.metric import Metric
 from ..optimizers.optimizer import Optimizer
+from ..preprocessing import train_test_split
 
 
 class Sequential(Model):
@@ -85,6 +86,7 @@ class Sequential(Model):
             x_train: np.ndarray,
             y_train: np.ndarray,
             epochs: int,
+            validation_split: float = None,
     ) -> None:
         """Fit the model on training data.
 
@@ -92,7 +94,17 @@ class Sequential(Model):
             x_train (np.ndarray): The input data for training.
             y_train (np.ndarray): The output data for training.
             epochs (int): The number of epochs to train the model.
+            validation_split (float, optional): The fraction of the data to use for validation. Default is None.
         """
+        if validation_split is not None:
+            x_train, x_val, y_train, y_val = train_test_split(
+                x_train, y_train, test_size=validation_split, random_state=42
+            )
+            # Initialize validation history
+            self.history["val_loss"] = []
+            for metric in self.metrics:
+                self.history[f"val_{metric.__class__.__name__}"] = []
+
         progress_bar = tqdm(range(epochs), desc="Training progress")
         for epoch in progress_bar:
             # Forward pass the input data through the network
@@ -117,7 +129,32 @@ class Sequential(Model):
                     for metric, m in zip(self.metrics, metric_values)
                 ]
             )
-            progress_bar.set_description(f"Epoch {epoch + 1}, Loss: {loss_value:.4f}, {metrics_str}")
+
+            if validation_split is not None:
+                # Calculate the loss and metrics for the validation data
+                y_val_pred = self.predict(x_val)
+                val_loss_value = self.loss.function(y_val, y_val_pred)
+                val_metric_values = [
+                    metric.call(y_val, y_val_pred) for metric in self.metrics
+                ]
+                # Update the validation history
+                self.history["val_loss"].append(val_loss_value)
+                for metric, m_value in zip(self.metrics, val_metric_values):
+                    self.history[f"val_{metric.__class__.__name__}"].append(m_value)
+
+                # Update the progress bar description with the validation loss and metrics
+                val_metrics_str = ", ".join(
+                    [
+                        f"Val {metric.__class__.__name__}: {m:.4f}"
+                        for metric, m in zip(self.metrics, val_metric_values)
+                    ]
+                )
+                progress_bar.set_description(
+                    f"Epoch {epoch + 1}, Loss: {loss_value:.4f}, {metrics_str}, Val Loss: {val_loss_value:.4f}, {val_metrics_str}"
+                )
+
+            else:
+                progress_bar.set_description(f"Epoch {epoch + 1}, Loss: {loss_value:.4f}, {metrics_str}")
 
             # Backward pass the error through the network
             layer_error = self.loss.gradient(y_train, layer_output)

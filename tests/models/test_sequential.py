@@ -188,6 +188,54 @@ class TestFit:
                     history[key][i] <= history[key][i + 1] for i in range(len(history[key]) - 1)
                 )
 
+    def test_fit_history_has_val_loss_and_val_metric_when_validation_split_provided(
+            self,
+            dummy_compiled_sequential_model: Sequential,
+            x: np.ndarray,
+            y: np.ndarray,
+    ):
+        dummy_compiled_sequential_model.fit(x, y, 5, validation_split=0.5)
+        history = dummy_compiled_sequential_model.history
+        loss_class_name = dummy_compiled_sequential_model.loss.__class__.__name__
+        metric_class_name = dummy_compiled_sequential_model.metrics[0].__class__.__name__
+        assert f"val_loss" in history and f"val_{metric_class_name}" in history.keys()
+
+    def test_fit_history_val_correct_length_when_validation_split_provided(
+            self,
+            dummy_compiled_sequential_model: Sequential,
+            x: np.ndarray,
+            y: np.ndarray,
+    ):
+        dummy_compiled_sequential_model.fit(x, y, 5, validation_split=0.5)
+        history = dummy_compiled_sequential_model.history
+        assert len(history["val_loss"]) == 5 and all(
+            len(history[key]) == 5 for key in history.keys() if "val_metric" in key)
+
+    def test_fit_history_val_values_are_floats_when_validation_split_provided(
+            self,
+            dummy_compiled_sequential_model: Sequential,
+            x: np.ndarray,
+            y: np.ndarray,
+    ):
+        dummy_compiled_sequential_model.fit(x, y, 5, validation_split=0.5)
+        history = dummy_compiled_sequential_model.history
+        assert all(isinstance(value, float) for value in history["val_loss"]) and all(
+            all(isinstance(value, float) for value in history[key]) for key in history.keys() if "val_metric" in key)
+
+    def test_fit_history_val_metric_increases_when_validation_split_provided(
+            self,
+            dummy_compiled_sequential_model: Sequential,
+            x: np.ndarray,
+            y: np.ndarray,
+    ):
+        dummy_compiled_sequential_model.fit(x, y, 5, validation_split=0.5)
+        history = dummy_compiled_sequential_model.history
+        for key in history.keys():
+            if "val_metric" in key:
+                assert all(
+                    history[key][i] <= history[key][i + 1] for i in range(len(history[key]) - 1)
+                )
+
     class TestFitUpdatesWeightsAndBiases:
         def test_layer_1_weights(
                 self,
