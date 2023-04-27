@@ -1,8 +1,7 @@
 from setuptools import setup, find_packages
 
-
 package_name = "inventronet"
-package_version = "0.0.3-alpha"
+package_version = "0.0.4-alpha"
 package_description = "A package for building and testing neural networks"
 
 # Read the README.md file
@@ -26,7 +25,7 @@ package_install_requires = [
 package_extras_require = {
     "test": ["pytest", "pytest-cov"],
     "docs": ["sphinx", "sphinx-rtd-theme"],
-    "lint": ["flake8", "pylint", "black"],
+    "lint": ["flake8", "ruff", "black"],
 }
 
 setup(
@@ -37,9 +36,11 @@ setup(
     long_description_content_type="text/markdown",
     url=package_url,
     author=package_author,
+    author_email=package_author_email,
     license=package_license,
     packages=find_packages(),
     install_requires=package_install_requires,
     classifiers=package_classifiers,
     extras_require=package_extras_require,
+    python_requires=">=3.9",
 )
