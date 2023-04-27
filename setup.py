@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 package_name = "inventronet"
-package_version = "0.0.5-alpha"
+package_version = "0.0.6-alpha"
 package_description = "A package for building and testing neural networks"
 
 # Read the README.md file
@@ -20,6 +20,7 @@ package_classifiers = [
 package_keywords = "neural network, machine learning, artificial intelligence"
 package_install_requires = [
     "numpy",
+    "tqdm",
 ]
 
 package_extras_require = {
