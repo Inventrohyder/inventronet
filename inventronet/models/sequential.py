@@ -20,11 +20,16 @@ class Sequential(Model):
         self.metrics: List[Type[Metric]] = None
         self.optimizer: Type[Optimizer] = None
         self.loss: Type[Loss] = None
-        # Add attributes for early stopping
+        # Attributes for early stopping
         self.patience: int = None
         self.min_delta: float = None
         self.wait: int = 0
         self.best_loss: float = np.inf
+
+        # Attribute for history
+        self.history = {
+            "loss": [],
+        }
 
     # Add a method to set early stopping parameters
     def set_early_stopping(self, patience: int, min_delta: float) -> None:
@@ -71,6 +76,9 @@ class Sequential(Model):
         self.loss = loss
         self.optimizer = optimizer
         self.metrics = metrics
+        # Initialize metric history
+        for metric in metrics:
+            self.history[f"{metric.__class__.__name__}"] = []
 
     def fit(
             self,
@@ -97,6 +105,10 @@ class Sequential(Model):
             metric_values = [
                 metric.call(y_train, layer_output) for metric in self.metrics
             ]
+            # Update the history
+            self.history["loss"].append(loss_value)
+            for metric, m_value in zip(self.metrics, metric_values):
+                self.history[f"{metric.__class__.__name__}"].append(m_value)
 
             # Update the progress bar description with the loss and metrics
             metrics_str = ", ".join(

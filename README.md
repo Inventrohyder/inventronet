@@ -25,6 +25,7 @@ binary classification problem:
 ```python
 from typing import Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from inventronet.activations import Sigmoid, ReLU
@@ -33,6 +34,21 @@ from inventronet.losses import BinaryCrossEntropy as BCE
 from inventronet.metrics import Accuracy, Precision
 from inventronet.models import Sequential
 from inventronet.optimizers import StochasticGradientDescent
+
+
+def plot_history(history):
+    fig, axs = plt.subplots(1, len(history), figsize=(12, 4), sharex=True)
+
+    for idx, (label, values) in enumerate(history.items()):
+        axs[idx].plot(range(1, len(values) + 1), values)
+        axs[idx].set_title(label)
+        axs[idx].set_xlabel("Epoch")
+        axs[idx].set_ylabel(label)
+        axs[idx].grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
 
 epochs = 10000
 
@@ -68,6 +84,9 @@ model.fit(input_data, output_data, epochs)
 # Evaluate the model on the test data
 loss_value, metric_value = model.evaluate(input_data, output_data)
 print(f"Test Loss: {loss_value:.4f}, Test metrics: {metric_value}")
+
+# Plot the training history
+plot_history(model.history)
 ```
 
 ## Documentation
