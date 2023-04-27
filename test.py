@@ -1,28 +1,3 @@
-# inventronet
-
-inventronet is a package for building and testing neural networks in Python. 
-It provides a simple and intuitive API for creating, training, 
-and evaluating various types of neural network models. 
-It also includes some common loss functions, activation functions, 
-and metrics for neural network problems.
-
-## Installation
-You can install inventronet using pip:
-
-```bash
-pip install inventronet
-```
-
-## Usage
-
-To use inventronet, you need to import the package and create a 
-neural network object. You can then add layers, loss functions, activation 
-functions, and metrics to the network. You can also specify the learning rate, 
-batch size, and number of epochs for training. 
-Here is an example of creating a simple feed forward neural network for a 
-binary classification problem:
-
-```python
 from typing import Tuple
 
 import numpy as np
@@ -68,12 +43,3 @@ model.fit(input_data, output_data, epochs)
 # Evaluate the model on the test data
 loss_value, metric_value = model.evaluate(input_data, output_data)
 print(f"Test Loss: {loss_value:.4f}, Test metrics: {metric_value}")
-```
-
-## Documentation
-
-You can find the full documentation of inventronet at https://github.com/inventrohyder/inventronet.
-
-## License
-
-inventronet is licensed under the MIT License. See the LICENSE file for more details.

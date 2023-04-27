@@ -1,12 +1,14 @@
 # Define a class for a sequential model
 from typing import List, Tuple, Type
-import numpy as np
 
-from ..optimizers.optimizer import Optimizer
+import numpy as np
+from tqdm import tqdm
+
+from .model import Model
+from ..layers.layer import Layer
 from ..losses.loss import Loss
 from ..metrics.metric import Metric
-from ..layers.layer import Layer
-from .model import Model
+from ..optimizers.optimizer import Optimizer
 
 
 class Sequential(Model):
@@ -15,6 +17,19 @@ class Sequential(Model):
         """Call the superclass constructor."""
         # Call the superclass constructor
         super().__init__()
+        self.metrics: List[Type[Metric]] = None
+        self.optimizer: Type[Optimizer] = None
+        self.loss: Type[Loss] = None
+        # Add attributes for early stopping
+        self.patience: int = None
+        self.min_delta: float = None
+        self.wait: int = 0
+        self.best_loss: float = np.inf
+
+    # Add a method to set early stopping parameters
+    def set_early_stopping(self, patience: int, min_delta: float) -> None:
+        self.patience = patience
+        self.min_delta = min_delta
 
     # Define a method for adding a layer to the model
     def add(self, layer: Type[Layer]) -> None:
@@ -38,13 +53,13 @@ class Sequential(Model):
             # previous layer output dimension
             else:
                 assert (
-                    layer.input_dim == previous_layer.output_dim
+                        layer.input_dim == previous_layer.output_dim
                 ), "Layer input dimension does not match previous layer output dimension"
         # Append the layer to the list of layers
         self.layers.append(layer)
 
     def compile(
-        self, loss: Type[Loss], optimizer: Type[Optimizer], metrics: List[Type[Metric]]
+            self, loss: Type[Loss], optimizer: Type[Optimizer], metrics: List[Type[Metric]]
     ) -> None:
         """Compile the model with a loss function, an optimizer, and metrics.
 
@@ -70,12 +85,12 @@ class Sequential(Model):
             y_train (np.ndarray): The output data for training.
             epochs (int): The number of epochs to train the model.
         """
-        for epoch in range(epochs):
+        progress_bar = tqdm(range(epochs), desc="Training progress")
+        for epoch in progress_bar:
             # Forward pass the input data through the network
             layer_output = x_train
             for layer in self.layers:
                 layer_output = layer.forward(layer_output, training=True)
-                print("Layer Output Shape:", layer_output.shape)  # Add this print statement
 
             # Calculate the loss and the metrics
             loss_value = self.loss.function(y_train, layer_output)
@@ -83,14 +98,14 @@ class Sequential(Model):
                 metric.call(y_train, layer_output) for metric in self.metrics
             ]
 
-            # Print the loss and the metrics
+            # Update the progress bar description with the loss and metrics
             metrics_str = ", ".join(
                 [
                     f"{metric.__class__.__name__}: {m:.4f}"
                     for metric, m in zip(self.metrics, metric_values)
                 ]
             )
-            print(f"Epoch {epoch + 1}, Loss: {loss_value:.4f}, {metrics_str}")
+            progress_bar.set_description(f"Epoch {epoch + 1}, Loss: {loss_value:.4f}, {metrics_str}")
 
             # Backward pass the error through the network
             layer_error = self.loss.gradient(y_train, layer_output)
@@ -102,18 +117,26 @@ class Sequential(Model):
                 )
                 layer_error = layer.backward(layer_error, prev_output=layer_input)
 
-                # Add the following print statements to debug the shapes
-                print("Layer Parameters Shapes:", {key: value.shape for key, value in layer.parameters.items()})
-                print("Layer Gradients Shapes:", {key: value.shape for key, value in layer.gradients.items()})
-
                 # Check shapes before updating the optimizer
                 for key in layer.parameters.keys():
                     assert layer.parameters[key].shape == layer.gradients[
                         key].shape, f"Parameter shape {layer.parameters[key].shape} does not match gradient shape {layer.gradients[key].shape}"
 
-                self.optimizer.update(layer_index, layer.parameters, layer.gradients)
+                self.optimizer.update(len(self.layers) - 1 - layer_index, layer.parameters, layer.gradients)
 
-    # Define a method for predicting the output for new data
+            # Check for early stopping
+            if self.patience is not None and self.min_delta is not None:
+                if loss_value < self.best_loss - self.min_delta:
+                    self.best_loss = loss_value
+                    self.wait = 0
+                else:
+                    self.wait += 1
+
+                if self.wait >= self.patience:
+                    progress_bar.close()
+                    print(f"Early stopping on epoch {epoch + 1}")
+                    break
+
     def predict(self, x_test: np.ndarray) -> np.ndarray:
         # Forward pass the input data through the network
         layer_output = x_test
@@ -124,7 +147,7 @@ class Sequential(Model):
 
     # Define a method for evaluating the model on test data
     def evaluate(
-        self, x_test: np.ndarray, y_test: np.ndarray
+            self, x_test: np.ndarray, y_test: np.ndarray
     ) -> Tuple[float, List[float]]:
         # Predict the output for the test data
         y_pred = self.predict(x_test)
