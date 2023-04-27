@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 
 from inventronet.preprocessing import CountVectorizer
 
@@ -46,7 +46,7 @@ def test_count_vectorizer_fit_transform_output(documents, expected_vocabulary):
         [0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1]
     ])
 
-    assert np.array_equal(X, expected_output)
+    assert np.array_equal(X.toarray(), expected_output)
 
 
 def test_count_vectorizer_transform_shape(documents, expected_vocabulary):
@@ -88,4 +88,3 @@ def test_count_vectorizer_no_lowercasing_vocabulary_size():
     vectorizer_no_lowercase.fit_transform(documents)
 
     assert len(vectorizer_no_lowercase.vocabulary_) > len(vectorizer.vocabulary_)
-

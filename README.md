@@ -82,8 +82,10 @@ model.set_early_stopping(patience=500, min_delta=1e-4)
 model.fit(input_data, output_data, epochs)
 
 # Evaluate the model on the test data
-loss_value, metric_value = model.evaluate(input_data, output_data)
-print(f"Test Loss: {loss_value:.4f}, Test metrics: {metric_value}")
+loss_value, metric_values = model.evaluate(input_data, output_data)
+metric_names = [metric.__class__.__name__ for metric in model.metrics]
+metric_str = ', '.join([f"{name}: {value:.4f}" for name, value in zip(metric_names, metric_values)])
+print(f"Test Loss: {loss_value:.4f}, Test metrics: {metric_str}")
 
 # Plot the training history
 plot_history(model.history)
