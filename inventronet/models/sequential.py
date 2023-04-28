@@ -156,19 +156,6 @@ class Sequential(Model):
                                 key].shape, f"Parameter shape {layer.parameters[key].shape} does not match gradient shape {layer.gradients[key].shape}"
                         self.optimizer.update(len(self.layers) - 1 - layer_index, layer.parameters, layer.gradients)
 
-                # Check for early stopping
-                if self.patience is not None and self.min_delta is not None:
-                    if loss_value < self.best_loss - self.min_delta:
-                        self.best_loss = loss_value
-                        self.wait = 0
-                    else:
-                        self.wait += 1
-
-                    if self.wait >= self.patience:
-                        progress_bar.close()
-                        print(f"Early stopping on epoch {epoch + 1}")
-                        break
-
             # Calculate the average loss and metrics for the current epoch
             avg_epoch_loss = epoch_loss / batch_count
             avg_epoch_metric_values = [
@@ -213,6 +200,21 @@ class Sequential(Model):
 
             else:
                 progress_bar.set_description(f"Epoch {epoch + 1}, Loss: {avg_epoch_loss:.4f}, {metrics_str}")
+
+            # Check for early stopping
+            if self.patience is not None and self.min_delta is not None:
+                current_val_loss = self.history["val_loss"][-1] if validation_split is not None else avg_epoch_loss
+
+                if current_val_loss < self.best_loss - self.min_delta:
+                    self.best_loss = current_val_loss
+                    self.wait = 0
+                else:
+                    self.wait += 1
+
+                if self.wait >= self.patience:
+                    progress_bar.close()
+                    print(f"Early stopping on epoch {epoch + 1}")
+                    break
 
     def predict(self, x_test: np.ndarray) -> np.ndarray:
         # Forward pass the input data through the network

@@ -10,9 +10,7 @@ import inventronet.metrics as metrics_module
 import inventronet.optimizers as optimizers_module
 from inventronet.activations import ReLU, Sigmoid
 from inventronet.layers import Dense, Dropout
-from inventronet.losses import BinaryCrossEntropy
 from inventronet.losses.loss import Loss
-from inventronet.metrics import Accuracy
 from inventronet.metrics.metric import Metric
 from inventronet.models import Sequential
 from inventronet.optimizers import StochasticGradientDescent
@@ -107,10 +105,11 @@ def y(xy: Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
 
 
 @pytest.fixture
-def sequential_model_with_dropout():
+def sequential_model_with_dropout(x: np.ndarray, y: np.ndarray, loss: Loss, optimizer: Optimizer,
+                                  metric: Metric) -> Sequential:
     # Define the input and output data
-    input_data = np.array([[0, 0, 1], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
-    output_data = np.array([[0], [1], [1], [0]])
+    input_data = x
+    output_data = y
 
     # Define the neural network with two dense layers and a dropout layer
     model = Sequential()
@@ -118,12 +117,8 @@ def sequential_model_with_dropout():
     model.add(Dropout(0.5, input_dim=4))
     model.add(Dense(input_dim=4, output_dim=1, activation=Sigmoid()))
 
-    # Define the loss function, optimizer, and metric
-    loss = BinaryCrossEntropy()
-    optimizer = StochasticGradientDescent(learning_rate=0.1)
-
     # Compile the model with the loss function, optimizer, and metric
-    model.compile(loss, optimizer, metrics=[Accuracy()])
+    model.compile(loss, optimizer, metrics=[metric])
 
     # Fit the model on the training data
     model.fit(input_data, output_data, epochs=10)
@@ -136,9 +131,40 @@ def test_sequential_model_with_dropout_loss_history_length(sequential_model_with
     assert len(sequential_model_with_dropout.history["loss"]) == 10
 
 
-def test_sequential_model_with_dropout_accuracy_history_length(sequential_model_with_dropout):
+def test_sequential_model_with_dropout_accuracy_history_length(sequential_model_with_dropout, metric: Metric):
     # Assert that the training didn't raise any errors and completed successfully
-    assert len(sequential_model_with_dropout.history["Accuracy"]) == 10
+    assert len(sequential_model_with_dropout.history[metric.__class__.__name__]) == 10
+
+
+# Define a simple model
+def create_model():
+    model = Sequential()
+    model.add(Dense(input_dim=2, output_dim=2, activation=Sigmoid()))
+    model.add(Dense(input_dim=2, output_dim=1, activation=Sigmoid()))
+    return model
+
+
+# Test early stopping
+@pytest.mark.parametrize("patience, min_delta, expected_epochs", [
+    (2, 0.1, 3),
+    (4, 0.05, 5)
+])
+def test_early_stopping(patience, min_delta, expected_epochs, loss: Loss, optimizer: Optimizer, metric: Metric):
+    model = create_model()
+    optimizer = StochasticGradientDescent(learning_rate=0.1)
+
+    model.compile(loss, optimizer, metrics=[metric])
+    model.set_early_stopping(patience=patience, min_delta=min_delta)
+
+    # Define a simple dataset
+    input_data = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+    output_data = np.array([[0], [1], [1], [0]])
+
+    # Train the model
+    model.fit(input_data, output_data, epochs=1000)
+
+    # Check if the training stopped at the expected epoch
+    assert len(model.history["loss"]) == expected_epochs
 
 
 def test_add(dummy_sequential_model: Sequential):
