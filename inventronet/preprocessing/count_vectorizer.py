@@ -1,15 +1,21 @@
-from typing import List, Dict, Union
 import re
 from collections import Counter
+from typing import List, Dict, Union, Optional
 
 from scipy.sparse import csr_matrix
 
 
 class CountVectorizer:
-    def __init__(self, lowercase: bool = True, token_pattern: str = r'\b\w+\b'):
+    def __init__(
+            self,
+            lowercase: bool = True,
+            token_pattern: str = r'\b\w+\b',
+            max_features: Optional[int] = None,
+    ):
         self.lowercase: bool = lowercase
         self.token_pattern: str = token_pattern
         self.vocabulary_: Union[Dict[str, int], None] = None
+        self.max_features = max_features
 
     def _preprocess(self, doc: str) -> str:
         if self.lowercase:
@@ -26,7 +32,11 @@ class CountVectorizer:
             tokens = self._tokenize(doc)
             word_counts.update(tokens)
 
-        self.vocabulary_ = {word: idx for idx, word in enumerate(word_counts.keys())}
+        if self.max_features is not None:
+            word_counts = word_counts.most_common(self.max_features)
+            self.vocabulary_ = {word: idx for idx, (word, _) in enumerate(word_counts)}
+        else:
+            self.vocabulary_ = {word: idx for idx, word in enumerate(word_counts.keys())}
 
     def transform(self, documents: List[str]) -> csr_matrix:
         if self.vocabulary_ is None:

@@ -88,3 +88,33 @@ def test_count_vectorizer_no_lowercasing_vocabulary_size():
     vectorizer_no_lowercase.fit_transform(documents)
 
     assert len(vectorizer_no_lowercase.vocabulary_) > len(vectorizer.vocabulary_)
+
+
+def test_count_vectorizer_max_features_vocabulary_size(documents):
+    vectorizer = CountVectorizer(max_features=5)
+    vectorizer.fit_transform(documents)
+
+    assert len(vectorizer.vocabulary_) == 5
+
+
+def test_count_vectorizer_max_features_output(documents):
+    vectorizer = CountVectorizer(max_features=5)
+    X = vectorizer.fit_transform(documents)
+
+    assert X.shape == (3, 5)
+
+
+def test_count_vectorizer_max_features_vocabulary_size(documents):
+    max_features = 5
+    vectorizer = CountVectorizer(max_features=max_features)
+    vectorizer.fit_transform(documents)
+
+    assert len(vectorizer.vocabulary_) == max_features
+
+
+def test_count_vectorizer_max_features_output_shape(documents):
+    max_features = 5
+    vectorizer = CountVectorizer(max_features=max_features)
+    X = vectorizer.fit_transform(documents)
+
+    assert X.shape == (3, max_features)
