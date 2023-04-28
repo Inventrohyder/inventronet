@@ -31,7 +31,7 @@ class Model(ABC):
     # function and a metric
     @abstractmethod
     def compile(
-            self, loss: Loss, optimizer: Optimizer, metrics: List[Type[Metric]]
+            self, loss: Loss, optimizer: Optimizer, metrics: List[Metric]
     ) -> None:
         """Compile the model with a loss function and a metric.
 

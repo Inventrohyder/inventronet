@@ -1,6 +1,6 @@
 # Define a class for a sequential model
 import math
-from typing import List, Tuple, Type
+from typing import List, Tuple
 
 import numpy as np
 from tqdm import tqdm
@@ -27,9 +27,9 @@ class Sequential(Model):
         """Call the superclass constructor."""
         # Call the superclass constructor
         super().__init__()
-        self.metrics: List[Type[Metric]] = None
-        self.optimizer: Type[Optimizer] = None
-        self.loss: Type[Loss] = None
+        self.metrics: List[Metric] = None
+        self.optimizer: Optimizer = None
+        self.loss: Loss = None
         # Attributes for early stopping
         self.patience: int = None
         self.min_delta: float = None
@@ -74,7 +74,7 @@ class Sequential(Model):
         self.layers.append(layer)
 
     def compile(
-            self, loss: Type[Loss], optimizer: Type[Optimizer], metrics: List[Type[Metric]]
+            self, loss: Loss, optimizer: Optimizer, metrics: List[Metric]
     ) -> None:
         """Compile the model with a loss function, an optimizer, and metrics.
 
@@ -150,11 +150,11 @@ class Sequential(Model):
                     layer_error = layer.backward(layer_error, prev_output=layer_input)
 
                     # Check shapes before updating the optimizer
-                    for key in layer.parameters.keys():
-                        assert layer.parameters[key].shape == layer.gradients[
-                            key].shape, f"Parameter shape {layer.parameters[key].shape} does not match gradient shape {layer.gradients[key].shape}"
-
-                    self.optimizer.update(len(self.layers) - 1 - layer_index, layer.parameters, layer.gradients)
+                    if layer.parameters is not None:
+                        for key in layer.parameters.keys():
+                            assert layer.parameters[key].shape == layer.gradients[
+                                key].shape, f"Parameter shape {layer.parameters[key].shape} does not match gradient shape {layer.gradients[key].shape}"
+                        self.optimizer.update(len(self.layers) - 1 - layer_index, layer.parameters, layer.gradients)
 
                 # Check for early stopping
                 if self.patience is not None and self.min_delta is not None:

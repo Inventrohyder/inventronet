@@ -1,19 +1,20 @@
-from typing import Callable, Dict, Tuple, Type
+from typing import Callable, Dict, Tuple
+
 import numpy as np
 
-from ..activations.activation import Activation
 from .layer import Layer
+from ..activations.activation import Activation
 
 
 class Dense(Layer):
     def __init__(
-        self,
-        input_dim: int,
-        output_dim: int,
-        activation: Type[Activation] = None,
-        use_bias: bool = True,
-        weight_initializer: Callable = np.random.uniform,
-        bias_initializer: Callable = np.zeros,
+            self,
+            input_dim: int,
+            output_dim: int,
+            activation: Activation = None,
+            use_bias: bool = True,
+            weight_initializer: Callable = np.random.uniform,
+            bias_initializer: Callable = np.zeros,
     ) -> None:
         """Initialize the dense layer with the given arguments.
 

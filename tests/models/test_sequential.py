@@ -8,10 +8,14 @@ from _pytest.fixtures import SubRequest
 import inventronet.losses as losses_module
 import inventronet.metrics as metrics_module
 import inventronet.optimizers as optimizers_module
-from inventronet.layers import Dense
+from inventronet.activations import ReLU, Sigmoid
+from inventronet.layers import Dense, Dropout
+from inventronet.losses import BinaryCrossEntropy
 from inventronet.losses.loss import Loss
+from inventronet.metrics import Accuracy
 from inventronet.metrics.metric import Metric
 from inventronet.models import Sequential
+from inventronet.optimizers import StochasticGradientDescent
 from inventronet.optimizers.optimizer import Optimizer
 
 # Get all classes in the metrics module that are subclasses of Metric
@@ -100,6 +104,41 @@ def x(xy: Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
 @pytest.fixture(scope="module")
 def y(xy: Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
     yield xy[1]
+
+
+@pytest.fixture
+def sequential_model_with_dropout():
+    # Define the input and output data
+    input_data = np.array([[0, 0, 1], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
+    output_data = np.array([[0], [1], [1], [0]])
+
+    # Define the neural network with two dense layers and a dropout layer
+    model = Sequential()
+    model.add(Dense(input_dim=3, output_dim=4, activation=ReLU()))
+    model.add(Dropout(0.5, input_dim=4))
+    model.add(Dense(input_dim=4, output_dim=1, activation=Sigmoid()))
+
+    # Define the loss function, optimizer, and metric
+    loss = BinaryCrossEntropy()
+    optimizer = StochasticGradientDescent(learning_rate=0.1)
+
+    # Compile the model with the loss function, optimizer, and metric
+    model.compile(loss, optimizer, metrics=[Accuracy()])
+
+    # Fit the model on the training data
+    model.fit(input_data, output_data, epochs=10)
+
+    return model
+
+
+def test_sequential_model_with_dropout_loss_history_length(sequential_model_with_dropout):
+    # Assert that the training didn't raise any errors and completed successfully
+    assert len(sequential_model_with_dropout.history["loss"]) == 10
+
+
+def test_sequential_model_with_dropout_accuracy_history_length(sequential_model_with_dropout):
+    # Assert that the training didn't raise any errors and completed successfully
+    assert len(sequential_model_with_dropout.history["Accuracy"]) == 10
 
 
 def test_add(dummy_sequential_model: Sequential):
