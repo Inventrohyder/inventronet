@@ -1,5 +1,5 @@
 import inspect
-from typing import Type
+from typing import Type, Tuple
 
 import numpy as np
 import pytest
@@ -79,16 +79,27 @@ def dummy_compiled_sequential_model(
     return dummy_sequential_model
 
 
-@pytest.fixture
-def x() -> np.ndarray:
-    # Create some dummy input data
-    yield np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 1, 0]])
+# Set different dataset sizes
+dataset_sizes = [2, 4, 10, 100]
 
 
-@pytest.fixture
-def y() -> np.ndarray:
-    # Create some dummy output data
-    yield np.array([[0], [0.5], [0.5], [1]])
+@pytest.fixture(scope="module", params=dataset_sizes)
+def xy(request: SubRequest) -> tuple:
+    np.random.seed(42)  # Set a random seed for reproducibility
+    size = request.param
+    x = np.random.rand(size, 3)  # `size` rows and 3 columns
+    y = np.random.rand(size, 1)  # `size` rows and 1 column
+    yield x, y
+
+
+@pytest.fixture(scope="module")
+def x(xy: Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+    yield xy[0]
+
+
+@pytest.fixture(scope="module")
+def y(xy: Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+    yield xy[1]
 
 
 def test_add(dummy_sequential_model: Sequential):
@@ -98,6 +109,22 @@ def test_add(dummy_sequential_model: Sequential):
         dummy_sequential_model.add(Dense(4, 2))
     # Check that the model still has two layers
     assert len(dummy_sequential_model.layers) == 2
+
+
+def test_fit_raises_value_error_with_insufficient_samples_after_validation_split(
+        dummy_compiled_sequential_model: Sequential,
+        dataset_size: int = 1,
+):
+    np.random.seed(42)  # Set a random seed for reproducibility
+    x = np.random.rand(dataset_size, 3)  # `dataset_size` rows and 3 columns
+    y = np.random.rand(dataset_size, 1)  # `dataset_size` rows and 1 column
+
+    if dataset_size < 2:  # Check if there are not enough samples for the validation split
+        with pytest.raises(ValueError,
+                           match="Not enough samples in the training set after applying the validation split."):
+            dummy_compiled_sequential_model.fit(x, y, 5, validation_split=0.5, batch_size=1)
+    else:
+        dummy_compiled_sequential_model.fit(x, y, 5, validation_split=0.5, batch_size=1)
 
 
 class TestCompile:
@@ -301,6 +328,34 @@ class TestFit:
             _, b2_new = dummy_compiled_sequential_model.layers[1].get_parameters()
             # Check that the biases have changed
             assert not np.array_equal(b2, b2_new)
+
+
+class TestFitBatchSizes:
+    @pytest.mark.parametrize("batch_size", [1, 2, 10, 32, 50])
+    def test_fit_history_correct_length_with_batch_size(
+            self,
+            dummy_compiled_sequential_model: Sequential,
+            x: np.ndarray,
+            y: np.ndarray,
+            batch_size: int,
+    ):
+        dummy_compiled_sequential_model.fit(x, y, 5, batch_size=batch_size)
+        history = dummy_compiled_sequential_model.history
+        assert len(history["loss"]) == 5 and all(
+            len(history[key]) == 5 for key in history.keys() if "metric" in key)
+
+    @pytest.mark.parametrize("batch_size", [1, 2, 10, 32, 50])
+    def test_fit_history_val_correct_length_when_validation_split_provided_and_batch_size(
+            self,
+            dummy_compiled_sequential_model: Sequential,
+            x: np.ndarray,
+            y: np.ndarray,
+            batch_size: int,
+    ):
+        dummy_compiled_sequential_model.fit(x, y, 5, validation_split=0.5, batch_size=batch_size)
+        history = dummy_compiled_sequential_model.history
+        assert len(history["val_loss"]) == 5 and all(
+            len(history[key]) == 5 for key in history.keys() if "val_metric" in key)
 
 
 class TestSequentialModelProperties:

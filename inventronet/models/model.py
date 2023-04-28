@@ -50,6 +50,7 @@ class Model(ABC):
             y_train: np.ndarray,
             epochs: int,
             validation_split: float = None,
+            batch_size: int = 32,
     ) -> None:
         """Fit the model on training data.
 
@@ -58,6 +59,7 @@ class Model(ABC):
             y_train (np.ndarray): The output data for training.
             epochs (int): The number of epochs to train the model.
             validation_split (float, optional): The fraction of the data to use for validation. Default is None.
+            batch_size (int, optional): The number of samples per gradient update. Default is 32.
         """
         raise NotImplementedError("The fit method must be implemented.")
 
