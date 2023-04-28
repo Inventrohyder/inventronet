@@ -55,5 +55,4 @@ class MeanAbsoluteError(Loss):
         sign = np.sign(y_true - y_pred)
         # Compute the derivative of the mean absolute error
         derivative = -sign / y_true.size
-        print(f"Gradient: {derivative}")
         return derivative

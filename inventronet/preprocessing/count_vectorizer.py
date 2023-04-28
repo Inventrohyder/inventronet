@@ -1,5 +1,5 @@
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from typing import List, Dict, Union, Optional
 
 from scipy.sparse import csr_matrix
@@ -18,23 +18,16 @@ class CountVectorizer:
         self.max_features = max_features
 
     def _preprocess(self, doc: str) -> str:
-        if self.lowercase:
-            doc = doc.lower()
-        return doc
+        return doc.lower() if self.lowercase else doc
 
     def _tokenize(self, doc: str) -> List[str]:
-        return re.findall(self.token_pattern, doc)
+        return [m.group(0) for m in re.finditer(self.token_pattern, doc)]
 
     def fit(self, documents: List[str]) -> None:
-        word_counts = Counter()
-        for doc in documents:
-            doc = self._preprocess(doc)
-            tokens = self._tokenize(doc)
-            word_counts.update(tokens)
+        word_counts = Counter(word for doc in documents for word in self._tokenize(self._preprocess(doc)))
 
         if self.max_features is not None:
-            word_counts = word_counts.most_common(self.max_features)
-            self.vocabulary_ = {word: idx for idx, (word, _) in enumerate(word_counts)}
+            self.vocabulary_ = {word: idx for idx, (word, _) in enumerate(word_counts.most_common(self.max_features))}
         else:
             self.vocabulary_ = {word: idx for idx, word in enumerate(word_counts.keys())}
 
@@ -45,18 +38,22 @@ class CountVectorizer:
         indptr = [0]
         indices = []
         data = []
+        vocabulary = defaultdict(lambda: None, self.vocabulary_)
+
         for doc in documents:
-            doc = self._preprocess(doc)
-            tokens = self._tokenize(doc)
-            word_counts = Counter(tokens)
+            preprocessed_doc = self._preprocess(doc)
+            tokenized_doc = self._tokenize(preprocessed_doc)
+            word_counts = Counter(tokenized_doc)
+
             for word, count in word_counts.items():
-                if word in self.vocabulary_:
-                    index = self.vocabulary_.get(word)
+                index = vocabulary[word]
+                if index is not None:
                     indices.append(index)
                     data.append(count)
+
             indptr.append(len(indices))
 
-        return csr_matrix((data, indices, indptr), dtype=int)
+        return csr_matrix((data, indices, indptr), dtype=int, shape=(len(documents), len(self.vocabulary_)))
 
     def fit_transform(self, documents: List[str]) -> csr_matrix:
         self.fit(documents)
