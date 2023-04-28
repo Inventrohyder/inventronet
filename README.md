@@ -1,12 +1,15 @@
 # inventronet
 
-inventronet is a package for building and testing neural networks in Python. 
-It provides a simple and intuitive API for creating, training, 
-and evaluating various types of neural network models. 
-It also includes some common loss functions, activation functions, 
+[![codecov](https://codecov.io/gh/Inventrohyder/inventronet/branch/main/graph/badge.svg?token=N4BYTLCLK7)](https://codecov.io/gh/Inventrohyder/inventronet)
+
+inventronet is a package for building and testing neural networks in Python.
+It provides a simple and intuitive API for creating, training,
+and evaluating various types of neural network models.
+It also includes some common loss functions, activation functions,
 and metrics for neural network problems.
 
 ## Installation
+
 You can install inventronet using pip:
 
 ```bash
@@ -15,11 +18,11 @@ pip install inventronet
 
 ## Usage
 
-To use inventronet, you need to import the package and create a 
-neural network object. You can then add layers, loss functions, activation 
-functions, and metrics to the network. You can also specify the learning rate, 
-batch size, and number of epochs for training. 
-Here is an example of creating a simple feed forward neural network for a 
+To use inventronet, you need to import the package and create a
+neural network object. You can then add layers, loss functions, activation
+functions, and metrics to the network. You can also specify the learning rate,
+batch size, and number of epochs for training.
+Here is an example of creating a simple feed forward neural network for a
 binary classification problem:
 
 ```python
@@ -91,7 +94,6 @@ print(f"Test Loss: {loss_value:.4f}, Test metrics: {metric_str}")
 plot_history(model.history)
 ```
 
-
 ```python
 # Example of validation splitting
 from typing import Tuple
@@ -126,7 +128,6 @@ def plot_history(history):
 
     plt.tight_layout()
     plt.show()
-
 
 
 epochs = 10000
@@ -168,7 +169,6 @@ loss_value, metric_values = model.evaluate(input_data, output_data)
 metric_names = [metric.__class__.__name__ for metric in model.metrics]
 metric_str = ', '.join([f"{name}: {value:.4f}" for name, value in zip(metric_names, metric_values)])
 print(f"Test Loss: {loss_value:.4f}, Test metrics: {metric_str}")
-
 
 # Plot the training history
 plot_history(model.history)
